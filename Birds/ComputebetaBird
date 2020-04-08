@@ -1,0 +1,764 @@
+###########################################################################################################
+# Computing Beta diversity BIRD
+#
+# Author : Nicolas Loiseau, 
+# Date : 19-01-2018
+# 
+#R version 3.4.1 (2017-06-30) -- "Single Candle"
+#Copyright (C) 2017 The R Foundation for Statistical Computing
+#Platform: x86_64-apple-darwin15.6.0 (64-bit)
+#
+###########################################################################################################
+setwd("~/Documents/Postdoc MARBEC/BETA PROTECTED AREA_CLEAN/Birds/Data")
+##
+# library
+library(ecodist)
+library(betapart)
+library(ade4)
+library(vegan)
+library(sp)
+library(stringr)
+library(ggplot2)
+library(cluster)
+library(reshape2)
+library(maptools)
+library(rgdal)
+library(sp)
+library(plyr)
+library(dplyr)
+library(sf)
+library(gtools)
+library(vegan)
+library(parallel)
+
+`%notin%` <- Negate(`%in%`)
+########################################################################
+# Load data
+########################################################################
+      # All Bird recorded: Occurence
+      fifty1<-read.table("fifty1.csv",sep=",",header=T)
+      fifty2<-read.table("fifty2.csv",sep=",",header=T)
+      fifty3<-read.table("fifty3.csv",sep=",",header=T)
+      fifty4<-read.table("fifty4.csv",sep=",",header=T)
+      fifty5<-read.table("fifty5.csv",sep=",",header=T)
+      fifty6<-read.table("fifty6.csv",sep=",",header=T)
+      fifty7<-read.table("fifty7.csv",sep=",",header=T)
+      fifty8<-read.table("fifty8.csv",sep=",",header=T)
+      fifty9<-read.table("fifty9.csv",sep=",",header=T)
+      fifty10<-read.table("fifty10.csv",sep=",",header=T)
+      
+      data<-rbind(fifty1,fifty2,fifty3,
+                  fifty4,fifty5,fifty6,
+                  fifty7,fifty8,
+                  fifty9,fifty10)
+      # Sample information
+      routes <- read.csv("routes.csv", quote = "", sep=",",
+                         row.names = NULL, 
+                         stringsAsFactors = FALSE)
+      
+      # Delete all record before 2010
+      data<-subset(data,data$year>=2010)
+########################################################################
+# pooled all Stop for each road
+########################################################################
+      data<-subset(data,data$countrynum==840) ### USA only
+      
+      #Creation of NewID for road
+      data<-data.frame(data,paste(data$countrynum,data$statenum,data$Route,sep="_"))
+      names(data)[58]<-"NewRouteID"
+      
+      #data<-data[,-c(1:6)]
+      #
+      
+      df_bird<-data.frame(NewRouteID=data$NewRouteID,year=data$year,AOU=data$AOU,data[,c(8:57)])
+      df_bird <- melt(df_bird, id = c("NewRouteID", "year", "AOU"))
+      
+      df_bird<-aggregate(df_bird$value,list(df_bird$NewRouteID,df_bird$AOU,df_bird$variable),sum)
+      colnames(df_bird)<-c("NewRouteID","AOU","Stop","Abun")
+      df_bird<-data.frame(df_bird,paste(df_bird$NewRouteID,df_bird$Stop,sep="_"))
+      colnames(df_bird)[5]<-"IDcomplete"
+      save(df_bird,file="df_bird.RData")
+      
+######################################################################
+# pooled all Stop for each road
+########################################################################
+      #data2<-data.frame(data[,c(1:7)],apply(data[,c(8:57)],1,sum))
+      #names(data2)[8]<-"Number"
+      routes2<-data.frame(routes,paste(routes$countrynum,routes$statenum,routes$Route,sep="_"))
+      names(routes2)[13]<-"NewRouteID"
+      rownames(routes2)<-routes2[,13]
+      #ids<-names(data[,2:51])
+      #  data2<-NULL 
+      #   for (i in 1:50){
+      #   mat<-data.frame(data[,c(1,52)],rep(ids[i],dim(data)[1]),data[,ids[i]])
+      #data2<-rbind(data2,mat) 
+      #   }
+      #colnames(data2)[3]<-"Stop"
+      #olnames(data2)[4]<-"Abun"
+      #data2<-data.frame(data2,paste(data2$NewRouteID,data2$Stop,sep="_"))
+      #colnames(data2)[5]<-"IDcomplete"
+
+
+########################################################################
+# PROTECTION EXTRACTION
+########################################################################
+      ########################################################################
+      # UCGS EXTRACTION
+      ########################################################################
+
+      setwd("~/Documents/Postdoc MARBEC/DATA BIRD BBS/PADUS1_4Shapefile")
+      #Library
+      
+      #Send MAP
+      mapPA<-readOGR ("PADUS1_4Combined.shp")
+      pointtoplot <- data.frame(SITE=routes2$NewRouteID,x=routes2$Longitude , y=routes2$Latitude)
+      pointtoplot <- unique(pointtoplot)
+      rownames(pointtoplot)<-pointtoplot[,1]
+      pointtoplot<-pointtoplot[,-1]
+      
+      coordinates(pointtoplot) <- ~ x + y 
+      proj4string(pointtoplot) <- CRS("+proj=longlat +ellps=WGS84")
+      mapPA<-spTransform(mapPA,CRS("+proj=longlat +ellps=WGS84"))
+      Info_Reserve<-over(pointtoplot, mapPA)
+      
+      routes3<-data.frame(routes2,Info_Reserve$d_Access)
+      names(routes3)[14]<-"Access"
+      routes3<-data.frame(routes3,Info_Reserve$IUCN_Cat)
+      names(routes3)[15]<-"IUCN_CAT"
+      #routes3<-data.frame(routes3,Info_Reserve$Loc_Nm)
+      routes3<-data.frame(routes3,Info_Reserve$Unit_Nm)
+      names(routes3)[16]<-"namesMPA"
+      routes3<-subset(routes3,routes3$countrynum==840) ### USA only
+      
+      routes3<-routes3[rownames(routes3)%in%df_bird$NewRouteID,]
+      
+      
+      
+      df.geo.Bird <- data.frame(name = rownames(routes3),
+                                lat  = routes3$Latitude,
+                                lon  =routes3$Longitude)
+      
+      #geodist.Bird<-GeoDistanceInMetresMatrix(df.geo.Bird) / 1000
+      #save(geodist.Bird,file="geodist.Bird.RData")
+      setwd("~/Documents/Postdoc MARBEC/DATA BIRD BBS")
+      load("geodist.Bird.RData")
+      
+########################################################################
+#Distance between each route
+#######################################################################
+      #Cluster pour regrouper les sites entre eux par ??chelle spatial
+      df.geo.Bird <- data.frame(name = rownames(routes3),
+                                lat  = routes3$Latitude,
+                                lon  =routes3$Longitude)
+      
+      geodist.Bird<-GeoDistanceInMetresMatrix(df.geo.Bird) / 1000
+
+########################################################################
+#Names of protected area
+#######################################################################
+
+      
+      listMPA_close<-rbind(subset(routes3,routes3$Access=="Closed"), subset(routes3,routes3$Access=="Restricted Access")
+                           ,subset(routes3,routes3$IUCN_CAT=="Ia"),subset(routes3,routes3$IUCN_CAT=="Ib"))
+           listMPA_close<-na.omit(unique(listMPA_close$namesMPA))
+            
+            listMPA_close_AGE <- unique(Info_Reserve[Info_Reserve$Unit_Nm %in%listMPA_close,])
+            listMPA_close_AGE <- unique(cbind.data.frame(listMPA_close_AGE$Unit_Nm,listMPA_close_AGE$Date_Est))
+            
+            
+      listMPA_restricted<-subset(routes3,routes3$Access=="Open Access")
+      listMPA_restricted<-listMPA_restricted[listMPA_restricted%notin%listMPA_close]
+      listMPA_restricted2<-unique(rownames(listMPA_restricted))
+      listMPA_restricted<-unique(listMPA_restricted$namesMPA)
+      
+      
+      listMPA_nonprotect<-unique(subset(routes3,is.na(routes3$Access))$NewRouteID)
+      
+#############################################################################
+#  VENN DIAGRAMM
+#############################################################################      
+      Bird_S_50km_Unique_Close<-matrix(NA,length(listMPA_close),100)
+      Bird_S_50km_Unique_NP<-Bird_S_50km_Unique_Close
+      Bird_S_50km_Unique_Rest<-Bird_S_50km_Unique_Close
+      
+      Bird_S_50km_Shared_Close_NP<-Bird_S_50km_Unique_Close
+      Bird_S_50km_Shared_Close_Rest<-Bird_S_50km_Unique_Close
+      Bird_S_50km_Shared_Rest_NP<-Bird_S_50km_Unique_Close
+      
+      Bird_S_50km_Shared_Close_Rest_NP<-Bird_S_50km_Unique_Close
+      Bird_S_50km_Tot<-Bird_S_50km_Unique_Close
+      
+      
+      Bird_S_50km_TOT_Close<-Bird_S_50km_Unique_Close
+      Bird_S_50km_TOT_Rest<-Bird_S_50km_Unique_Close
+      Bird_S_50km_TOT_NP<-Bird_S_50km_Unique_Close
+      
+      for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
+        
+        IDReserveClose<-subset(routes3,routes3$namesMPA==listMPA_close[i])
+        
+        #Transect Closed
+        Transect_Closed<-occ[rownames(occ)%in%IDReserveClose$NewRouteID,]
+        
+        #Recurperer les transects autours qui sont non prot??g?? ou zone restreint
+        IDTransect50km<-NULL 
+        for (j in 1:dim(Transect_Closed)[1]){
+          
+          if(dim(Transect_Closed)[1]==1){#strucure of the dataframe is different if dim(Transect_Closed)[1]==1.
+            distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(Transect_Closed),])
+            rownames(distGeo)<-colnames(geodist.Bird)}
+          
+          else{
+            distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(Transect_Closed),]))
+            rownames(distGeo)<-colnames(geodist.Bird)
+          }
+          
+          
+          distGeo2<-subset(distGeo,distGeo[,j]<50) 
+          distGeo2<-subset(distGeo2,distGeo2[,j]>0)  
+          distGeo2<-unique(rownames(distGeo2))
+          IDTransect50km<-c(IDTransect50km,distGeo2)
+        }
+        IDTransect50km<-unique(IDTransect50km)
+        
+        #Transect restreint
+        IDTransect50km_Rest<- IDTransect50km[IDTransect50km%in%listMPA_restricted2]
+        Transect50km_Rest<-occ[rownames(occ)%in%IDTransect50km_Rest,]
+        
+        #Transect non protected
+        IDTransect50km_NP<- IDTransect50km[IDTransect50km%in%listMPA_nonprotect]
+        Transect50km_NP<-occ[rownames(occ)%in%IDTransect50km_NP,]
+        
+        #Si l'un des 3 n'a pas de dimension, la comparaison des 3 n'est pas possible on passe au i suivant
+        if ( any(c(dim(Transect_Closed)[1],dim(Transect50km_Rest)[1],dim(Transect50km_NP)[1]) == 0) ) next
+        
+        #Shared species
+        for (k in 1:2){ #Bootstrap due to different sampling effort
+          
+          Group_CLOSED_Sample<-as.matrix(Transect_Closed[sample(1:nrow(Transect_Closed),min(dim(Transect_Closed)[1],dim(Transect50km_Rest)[1],dim(Transect50km_NP)[1]),replace=F),])
+          Group_RESTRICT_Sample<-as.matrix(Transect50km_Rest[sample(1:nrow(Transect50km_Rest),min(dim(Transect_Closed)[1],dim(Transect50km_Rest)[1],dim(Transect50km_NP)[1]),replace=F),])
+          Group_NP_Sample<-as.matrix(Transect50km_NP[sample(1:nrow(Transect50km_NP),min(dim(Transect_Closed)[1],dim(Transect50km_Rest)[1],dim(Transect50km_NP)[1]),replace=F),])
+          
+          Group_CLOSED2<-apply(Group_CLOSED_Sample,2,sum)
+          Group_RESTRICT2<-apply(Group_RESTRICT_Sample,2,sum)
+          Group_NP2<-apply(Group_NP_Sample,2,sum)
+          
+          Compa<-rbind(Group_CLOSED2,Group_RESTRICT2,Group_NP2)
+          Compa[Compa>0]<-1
+          
+          #############################################################################
+          ##   Common Species for VENN DIAGRAMM
+          #############################################################################
+          Bird_S_50km_Unique_Close[i,k]<-sum(Compa[,apply(Compa,2,sum)==1][1,])
+          Bird_S_50km_Unique_Rest[i,k]<-sum(Compa[,apply(Compa,2,sum)==1][2,])
+          Bird_S_50km_Unique_NP[i,k]<-sum(Compa[,apply(Compa,2,sum)==1][3,])
+          
+          Bird_S_50km_Shared_Close_Rest[i,k]<-dim(data.frame(Compa[,apply(Compa[c(1,2),],2,sum)==2 & apply(Compa,2,sum)==2]))[2]
+          Bird_S_50km_Shared_Close_NP[i,k]<-dim(data.frame(Compa[,apply(Compa[c(1,3),],2,sum)==2 & apply(Compa,2,sum)==2]))[2]
+          Bird_S_50km_Shared_Rest_NP[i,k]<-dim(data.frame(Compa[,apply(Compa[c(2,3),],2,sum)==2 & apply(Compa,2,sum)==2]))[2]
+          
+          Bird_S_50km_Shared_Close_Rest_NP[i,k]<-dim(data.frame(Compa[,apply(Compa,2,sum)==3]))[2]
+          
+          Bird_S_50km_Tot[i,k]<-dim(data.frame(Compa[,apply(Compa,2,sum)>=1]))[2]
+          
+          Bird_S_50km_TOT_Close[i,k]<-sum(Compa[1,])
+          Bird_S_50km_TOT_Rest[i,k]<-sum(Compa[2,])
+          Bird_S_50km_TOT_NP[i,k]<-sum(Compa[3,])
+          
+          #save(Bird_S_50km_Unique_Close,file="Bird_S_50km_Unique_Close.RData")
+          #save(Bird_S_50km_Unique_Rest,file="Bird_S_50km_Unique_Rest.RData")
+          #save(Bird_S_50km_Unique_NP,file="Bird_S_50km_Unique_NP.RData")
+          #save(Bird_S_50km_Shared_Close_Rest,file="Bird_S_50km_Shared_Close_Rest.RData")
+          #save(Bird_S_50km_Shared_Close_NP,file="Bird_S_50km_Shared_Close_NP.RData")
+          #save(Bird_S_50km_Shared_Rest_NP,file="Bird_S_50km_Shared_Rest_NP.RData")
+          #save(Bird_S_50km_Shared_Close_Rest_NP,file="Bird_S_50km_Shared_Close_Rest_NP.RData")
+          #save(Bird_S_50km_Tot,file="Bird_S_50km_Tot.RData")
+          
+        }
+        
+        print(i)
+      }
+      
+      
+      
+      reps=1000
+      core=2   
+#####################SPA VS NPA############################
+      setwd("~/Documents/Postdoc MARBEC/BETA PROTECTED AREA_CLEAN/Birds/Data/Results")
+      Bird_BetaClose_NonP_TOT_50km<-matrix(NA,length(listMPA_close),reps)
+      Bird_BetaClose_NonP_TUR_50km<-Bird_BetaClose_NonP_TOT_50km
+      Bird_BetaClose_NonP_NES_50km<-Bird_BetaClose_NonP_TOT_50km
+   
+      Bird_S_50km_Unique_Close.Close_NP<-matrix(NA,length(listMPA_close),reps)
+      Bird_S_50km_Unique_NP.Close_NP<-Bird_S_50km_Unique_Close.Close_NP
+      Bird_S_50km_Shared_Close_NonP.Close_NP<-Bird_S_50km_Unique_Close.Close_NP
+      
+      ses.tot_50km_Bird_Close_NonP<-Bird_BetaClose_NonP_TOT_50km
+      ses.tur_50km_Bird_Close_NonP<-Bird_BetaClose_NonP_TOT_50km
+      ses.nes_50km_Bird_Close_NonP<-Bird_BetaClose_NonP_TOT_50km
+
+      for (i in 1: length(listMPA_close)) {# For each PA
+        
+        #survey protected
+        IDReserveClose<-subset(routes3,routes3$namesMPA==listMPA_close[i])
+        
+        IDsurvey50km<-NULL 
+        for (j in 1: dim(IDReserveClose)[1]){
+          
+          if(dim(IDReserveClose)[1]==1){#strucure of the dataframe is different if dim(survey_Closed)[1]==1.
+            distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,])
+            rownames(distGeo)<-colnames(geodist.Bird)}
+          
+          else{
+            distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,]))
+            rownames(distGeo)<-colnames(geodist.Bird)
+          }
+          distGeo2<-subset(distGeo,distGeo[,j]<50) 
+          distGeo2<-subset(distGeo2,distGeo2[,j]>0)  
+          distGeo2<-unique(rownames(distGeo2))
+          IDsurvey50km<-c(IDsurvey50km,distGeo2)
+        }
+        IDsurvey50km<-unique(IDsurvey50km)
+        
+        #survey non protected
+        IDsurvey50km_NP<- IDsurvey50km[IDsurvey50km%in%listMPA_nonprotect]
+        
+        #Compute BEta
+        for (k in 1:reps){ #Bootstrap due to different sampling effort
+          
+          if (length(IDsurvey50km_NP) == 0){
+            next
+          }
+          
+          if (dim(IDReserveClose)[1]>length(IDsurvey50km_NP)){
+            
+            #survey NP
+            survey50km_NP<-df_bird[df_bird$NewRouteID%in%IDsurvey50km_NP,]
+            survey50km_NP <- dcast(survey50km_NP, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey50km_NP)<-survey50km_NP[,1]
+            survey50km_NP<-survey50km_NP[,-1]      
+            
+            #survey Closed
+            names_Closed_Sample<-sample(IDReserveClose$NewRouteID,length(IDsurvey50km_NP),replace=F)
+            survey_Closed<-df_bird[df_bird$NewRouteID%in%names_Closed_Sample,]
+            survey_Closed <- dcast(survey_Closed, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey_Closed)<-survey_Closed[,1]
+            survey_Closed<-survey_Closed[,-1]
+            
+            #Merge matrix for NULL MODEL
+            Compa<-smartbind(survey_Closed, survey50km_NP)
+            rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_NP))
+            Compa[is.na(Compa)]<-0
+            Compa<-Compa[,apply(Compa,2,sum)>0]
+            
+            #create random matrices
+            Compa_NULL<-Compa
+            null.algo<-nullmodel(Compa_NULL, "curveball")
+            random_mat <- simulate(null.algo, nsim=reps,seed=1871)
+            ##create random matrices
+            random_pool<-mclapply(1:reps,function(e){ rbind(apply(random_mat[,,e][1:dim(survey_Closed)[1],],2,sum),apply(random_mat[,,e][(dim(survey50km_NP)[1]+1):dim(Compa_NULL)[1],],2,sum))
+            },mc.cores=core)
+            random_pool<- rapply(random_pool,function(x) ifelse(x>=1,1,x), how = "replace")
+            beta_null<-mclapply(1:reps,function(k) beta.pair(random_pool[[k]],index.family = "jaccard"),mc.cores=core)  
+          }
+          
+          
+          else {
+            
+            #survey NP
+            names_NP_Sample<-sample(IDsurvey50km_NP,dim(IDReserveClose)[1],replace=F)
+            survey50km_NP<-df_bird[df_bird$NewRouteID%in%names_NP_Sample,]
+            survey50km_NP <- dcast(survey50km_NP, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey50km_NP)<-survey50km_NP[,1]
+            survey50km_NP<-survey50km_NP[,-1]      
+            
+            #survey Closed
+            survey_Closed<-df_bird[df_bird$NewRouteID%in%IDReserveClose$NewRouteID,]
+            survey_Closed <- dcast(survey_Closed, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey_Closed)<-survey_Closed[,1]
+            survey_Closed<-survey_Closed[,-1]
+            
+            #Merge matrix for NULL MODEL
+            Compa<-smartbind(survey_Closed, survey50km_NP)
+            rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_NP))
+            Compa[is.na(Compa)]<-0
+            Compa<-Compa[,apply(Compa,2,sum)>0]
+            
+            #create random matrices
+            Compa_NULL<-Compa
+            null.algo<-nullmodel(Compa_NULL, "curveball")
+            random_mat <- simulate(null.algo, nsim=reps,seed=1871)
+            #create random matrices
+            random_pool<-mclapply(1:reps,function(e){ rbind(apply(random_mat[,,e][1:dim(survey_Closed)[1],],2,sum),apply(random_mat[,,e][(dim(survey50km_NP)[1]+1):dim(Compa_NULL)[1],],2,sum))
+            },mc.cores=core)
+            random_pool<- rapply(random_pool,function(x) ifelse(x>=1,1,x), how = "replace")
+            beta_null<-mclapply(1:reps,function(k) beta.pair(random_pool[[k]],index.family = "jaccard"),mc.cores=core)  
+          }
+          
+          Compa<-rbind(apply(Compa[1:dim(survey_Closed)[1],],2,sum),apply(Compa[(dim(survey50km_NP)[1]+1):dim(Compa)[1],],2,sum))
+          Compa[Compa>0]<-1
+          BETAX<-beta.pair(Compa, index.family="jaccard")
+          
+          Bird_BetaClose_NonP_TOT_50km[i,k]<-BETAX$beta.jac
+          Bird_BetaClose_NonP_TUR_50km[i,k]<-BETAX$beta.jtu
+          Bird_BetaClose_NonP_NES_50km[i,k]<-BETAX$beta.jne
+          
+          if(length(dim(Compa[,Compa[1,]==1 & Compa[2,]==0])[2])==0){Bird_S_50km_Unique_Close.Close_NP[i,k]<-0
+                  }else{Bird_S_50km_Unique_Close.Close_NP[i,k]<-dim(Compa[,Compa[1,]==1 & Compa[2,]==0])[2]} 
+        
+          if(length(dim(Compa[,Compa[2,]==1 & Compa[1,]==0])[2])==0){Bird_S_50km_Unique_NP.Close_NP[i,k]<-0
+          }else{ Bird_S_50km_Unique_NP.Close_NP[i,k]<-dim(Compa[,Compa[2,]==1 & Compa[1,]==0])[2]} 
+
+          Bird_S_50km_Shared_Close_NonP.Close_NP[i,k]<-dim(Compa[,apply(Compa,2,sum)==2])[2]
+        
+          nullbeta <- t( do.call(rbind.data.frame, beta_null))
+          # SES=(obs-mean(rand))/sd(rand)
+          ses.tot_50km_Bird_Close_NonP[i,k] = (BETAX$beta.jac - mean(nullbeta[3,]))/sd(nullbeta[3,])
+          ses.tur_50km_Bird_Close_NonP[i,k] = (BETAX$beta.jtu - mean(nullbeta[1,]))/sd(nullbeta[1,])
+          ses.nes_50km_Bird_Close_NonP[i,k] = (BETAX$beta.jne - mean(nullbeta[2,]))/sd(nullbeta[2,])
+       
+          
+          save(Bird_BetaClose_NonP_TOT_50km,file="Bird_BetaClose_NonP_TOT_50km.RData")
+          save(Bird_BetaClose_NonP_TUR_50km,file="Bird_BetaClose_NonP_TUR_50km.RData")
+          save(Bird_BetaClose_NonP_NES_50km,file="Bird_BetaClose_NonP_NES_50km.RData")
+          
+          save(Bird_S_50km_Unique_Close.Close_NP,file="Bird_S_50km_Unique_Close.Close_NP.RData")
+          save(Bird_S_50km_Unique_NP.Close_NP,file="Bird_S_50km_Unique_NP.Close_NP.RData")
+          save(Bird_S_50km_Shared_Close_NonP.Close_NP,file="Bird_S_50km_Shared_Close_NonP.Close_NP.RData")
+          
+          save(ses.tot_50km_Bird_Close_NonP,file="ses.tot_50km_Bird_Close_NonP.RData")
+          save(ses.tur_50km_Bird_Close_NonP,file="ses.tur_50km_Bird_Close_NonP.RData")
+          save(ses.nes_50km_Bird_Close_NonP,file="ses.nes_50km_Bird_Close_NonP.RData")
+
+          
+          print(paste0("k",k))
+        }
+        
+        print(paste0("i",i))
+      }
+      
+      
+      
+      #############################################################################
+      #############################################################################
+      #############################################################################    
+      
+      Bird_BetaClose_RESTRICT_TOT_50km<-matrix(NA,length(listMPA_close),reps)
+      Bird_BetaClose_RESTRICT_TUR_50km<-Bird_BetaClose_RESTRICT_TOT_50km
+      Bird_BetaClose_RESTRICT_NES_50km<-Bird_BetaClose_RESTRICT_TOT_50km
+      
+      Bird_S_50km_Unique_Close.Close_Rest<-matrix(NA,length(listMPA_close),reps)
+      Bird_S_50km_Unique_Rest.Close_Rest<-Bird_S_50km_Unique_Close.Close_Rest
+      Bird_S_50km_Shared_Close_Rest.Close_Rest<-Bird_S_50km_Unique_Close.Close_Rest
+      
+      ses.tot_50km_Bird_Close_RESTRICT<-Bird_BetaClose_RESTRICT_TOT_50km
+      ses.tur_50km_Bird_Close_RESTRICT<-Bird_BetaClose_RESTRICT_TOT_50km
+      ses.nes_50km_Bird_Close_RESTRICT<-Bird_BetaClose_RESTRICT_TOT_50km
+      
+           for (i in 1: length(listMPA_close)) {# For each PA
+        
+             #survey protected
+        IDReserveClose<-subset(routes3,routes3$namesMPA==listMPA_close[i])
+    
+        
+        IDsurvey50km<-NULL 
+        for (j in 1: dim(IDReserveClose)[1]){
+          
+          if(dim(IDReserveClose)[1]==1){#strucure of the dataframe is different if dim(survey_Closed)[1]==1.
+            distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,])
+            rownames(distGeo)<-colnames(geodist.Bird)}
+          
+          else{
+            distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,]))
+            rownames(distGeo)<-colnames(geodist.Bird)
+          }
+          distGeo2<-subset(distGeo,distGeo[,j]<50) 
+          distGeo2<-subset(distGeo2,distGeo2[,j]>0)  
+          distGeo2<-unique(rownames(distGeo2))
+          IDsurvey50km<-c(IDsurvey50km,distGeo2)
+        }
+        IDsurvey50km<-unique(IDsurvey50km)
+        
+        #survey non protected
+        IDsurvey50km_RESTRICT<- IDsurvey50km[IDsurvey50km%in%listMPA_restricted2]
+        
+        #Beta
+        for (k in 1:reps){ #Bootstrap due to different sampling effort
+          
+          if (length(IDsurvey50km_RESTRICT) == 0){
+            next
+          }
+          
+          if (dim(IDReserveClose)[1]>length(IDsurvey50km_RESTRICT)){
+            
+            #survey RESTRICT
+            survey50km_RESTRICT<-df_bird[df_bird$NewRouteID%in%IDsurvey50km_RESTRICT,]
+            survey50km_RESTRICT <- dcast(survey50km_RESTRICT, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey50km_RESTRICT)<-survey50km_RESTRICT[,1]
+            survey50km_RESTRICT<-survey50km_RESTRICT[,-1]      
+            
+            #survey Closed
+            names_Closed_Sample<-sample(IDReserveClose$NewRouteID,length(IDsurvey50km_RESTRICT),replace=F)
+            survey_Closed<-df_bird[df_bird$NewRouteID%in%names_Closed_Sample,]
+            survey_Closed <- dcast(survey_Closed, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey_Closed)<-survey_Closed[,1]
+            survey_Closed<-survey_Closed[,-1]
+            
+            #Merge matrix for NULL MODEL
+            Compa<-smartbind(survey_Closed, survey50km_RESTRICT)
+            rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_RESTRICT))
+            Compa[is.na(Compa)]<-0
+            Compa<-Compa[,apply(Compa,2,sum)>0]
+            
+            #create random matrices
+            Compa_NULL<-Compa
+            null.algo<-nullmodel(Compa_NULL, "curveball")
+            random_mat <- simulate(null.algo, nsim=reps,seed=1871)
+            #create random matrices
+            random_pool<-mclapply(1:reps,function(e){ rbind(apply(random_mat[,,e][1:dim(survey_Closed)[1],],2,sum),apply(random_mat[,,e][(dim(survey50km_RESTRICT)[1]+1):dim(Compa_NULL)[1],],2,sum))
+            },mc.cores=core)
+            random_pool<- rapply(random_pool,function(x) ifelse(x>=1,1,x), how = "replace")
+            beta_null<-mclapply(1:reps,function(k) beta.pair(random_pool[[k]],index.family = "jaccard"),mc.cores=core)  
+          }
+          
+          
+          else {
+            
+            #survey RESTRICT
+            names_RESTRICT_Sample<-sample(IDsurvey50km_RESTRICT,dim(IDReserveClose)[1],replace=F)
+            survey50km_RESTRICT<-df_bird[df_bird$NewRouteID%in%names_RESTRICT_Sample,]
+            survey50km_RESTRICT <- dcast(survey50km_RESTRICT, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey50km_RESTRICT)<-survey50km_RESTRICT[,1]
+            survey50km_RESTRICT<-survey50km_RESTRICT[,-1]      
+            
+            #survey Closed
+            survey_Closed<-df_bird[df_bird$NewRouteID%in%IDReserveClose$NewRouteID,]
+            survey_Closed <- dcast(survey_Closed, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey_Closed)<-survey_Closed[,1]
+            survey_Closed<-survey_Closed[,-1]
+            
+            #Merge matrix for NULL MODEL
+            Compa<-smartbind(survey_Closed, survey50km_RESTRICT)
+            rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_RESTRICT))
+            Compa[is.na(Compa)]<-0
+            Compa<-Compa[,apply(Compa,2,sum)>0]
+            
+            #create random matrices
+            Compa_NULL<-Compa
+            null.algo<-nullmodel(Compa_NULL, "curveball")
+            random_mat <- simulate(null.algo, nsim=reps,seed=1871)
+            #create random matrices
+            random_pool<-mclapply(1:reps,function(e){ rbind(apply(random_mat[,,e][1:dim(survey_Closed)[1],],2,sum),apply(random_mat[,,e][(dim(survey50km_RESTRICT)[1]+1):dim(Compa_NULL)[1],],2,sum))
+            },mc.cores=core)
+            random_pool<- rapply(random_pool,function(x) ifelse(x>=1,1,x), how = "replace")
+            beta_null<-mclapply(1:reps,function(k) beta.pair(random_pool[[k]],index.family = "jaccard"),mc.cores=core)  
+          }
+          
+          Compa<-rbind(apply(Compa[1:dim(survey_Closed)[1],],2,sum),apply(Compa[(dim(survey50km_RESTRICT)[1]+1):dim(Compa)[1],],2,sum))
+          Compa[Compa>0]<-1
+          BETAX<-beta.pair(Compa, index.family="jaccard")
+          
+          Bird_BetaClose_RESTRICT_TOT_50km[i,k]<-BETAX$beta.jac
+          Bird_BetaClose_RESTRICT_TUR_50km[i,k]<-BETAX$beta.jtu
+          Bird_BetaClose_RESTRICT_NES_50km[i,k]<-BETAX$beta.jne
+          
+
+          if(length(dim(Compa[,Compa[1,]==1 & Compa[2,]==0])[2])==0){Bird_S_50km_Unique_Close.Close_Rest[i,k]<-0
+          }else{Bird_S_50km_Unique_Close.Close_Rest[i,k]<-dim(Compa[,Compa[1,]==1 & Compa[2,]==0])[2]} 
+          
+          if(length(dim(Compa[,Compa[2,]==1 & Compa[1,]==0])[2])==0){Bird_S_50km_Unique_Rest.Close_Rest[i,k]<-0
+          }else{ Bird_S_50km_Unique_Rest.Close_Rest[i,k]<-dim(Compa[,Compa[2,]==1 & Compa[1,]==0])[2]} 
+          
+          Bird_S_50km_Shared_Close_Rest.Close_Rest[i,k]<-dim(Compa[,apply(Compa,2,sum)==2])[2]
+          
+          
+          
+          
+          nullbeta <- t( do.call(rbind.data.frame, beta_null))
+          # SES=(obs-mean(rand))/sd(rand)
+          ses.tot_50km_Bird_Close_RESTRICT[i,k] = (BETAX$beta.jac - mean(nullbeta[3,]))/sd(nullbeta[3,])
+          ses.tur_50km_Bird_Close_RESTRICT[i,k] = (BETAX$beta.jtu - mean(nullbeta[1,]))/sd(nullbeta[1,])
+          ses.nes_50km_Bird_Close_RESTRICT[i,k] = (BETAX$beta.jne - mean(nullbeta[2,]))/sd(nullbeta[2,])
+          
+   
+          save(Bird_BetaClose_RESTRICT_TOT_50km,file="Bird_BetaClose_RESTRICT_TOT_50km.RData")
+          save(Bird_BetaClose_RESTRICT_TUR_50km,file="Bird_BetaClose_RESTRICT_TUR_50km.RData")
+          save(Bird_BetaClose_RESTRICT_NES_50km,file= "Bird_BetaClose_RESTRICT_NES_50km.RData")
+          
+          save(Bird_S_50km_Unique_Close.Close_Rest,file="Bird_S_50km_Unique_Close.Close_Rest.RData")
+          save(Bird_S_50km_Unique_Rest.Close_Rest,file="Bird_S_50km_Unique_Rest.Close_Rest.RData")
+          save(Bird_S_50km_Shared_Close_Rest.Close_Rest,file="Bird_S_50km_Shared_Close_Rest.Close_Rest.RData")
+          
+          save(ses.tot_50km_Bird_Close_RESTRICT,file="ses.tot_50km_Bird_Close_RESTRICT.RData")
+          save(ses.tur_50km_Bird_Close_RESTRICT,file="ses.tur_50km_Bird_Close_RESTRICT.RData")
+          save(ses.nes_50km_Bird_Close_RESTRICT,file="ses.nes_50km_Bird_Close_RESTRICT.RData")
+
+          print(paste0("k",k))
+        }
+        
+        print(paste0("i",i))
+      }
+      
+      
+      #############################################################################
+      #############################################################################
+      #############################################################################    
+      #############################################################################
+      #############################################################################
+      Bird_Betarestricte_NonP_TOT_50km<-matrix(NA,length(listMPA_restricted),50)
+      Bird_Betarestricte_NonP_TUR_50km<-Bird_Betarestricte_NonP_TOT_50km
+      Bird_Betarestricte_NonP_NES_50km<-Bird_Betarestricte_NonP_TOT_50km
+      
+      Bird_S_50km_Unique_restricte.Rest_NP<-matrix(NA,length(listMPA_restricted),50)
+      Bird_S_50km_Unique_NP.Rest_NP<-Bird_S_50km_Unique_restricte.Rest_NP
+      Bird_S_50km_Shared_restricte_NonP.Rest_NP<-Bird_S_50km_Unique_restricte.Rest_NP
+      
+      ses.tot_50km_Bird_restricte_NonP<-Bird_Betarestricte_NonP_TOT_50km
+      ses.tur_50km_Bird_restricte_NonP<-Bird_Betarestricte_NonP_TOT_50km
+      ses.nes_50km_Bird_restricte_NonP<-Bird_Betarestricte_NonP_TOT_50km
+ 
+            for (i in 1: length(listMPA_restricted)) {# Pour chaque r??serve
+        
+        
+              #Transect restricted
+        IDReserverestricte<-subset(routes3,routes3$namesMPA==listMPA_restricted[i])
+        
+        IDTransect50km<-NULL 
+        for (j in 1:dim(IDReserverestricte)[1]){
+          
+          if(dim(IDReserverestricte)[1]==1){
+            distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(IDReserverestricte),])
+            rownames(distGeo)<-colnames(geodist.Bird)}
+          
+          else{
+            distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(IDReserverestricte),]))
+            rownames(distGeo)<-colnames(geodist.Bird)
+          }
+          
+          
+          distGeo2<-subset(distGeo,distGeo[,j]<50) 
+          distGeo2<-subset(distGeo2,distGeo2[,j]>0)  
+          distGeo2<-unique(rownames(distGeo2))
+          IDTransect50km<-c(IDTransect50km,distGeo2)
+        }
+        IDTransect50km<-unique(IDTransect50km)
+        
+        #Transect non protected
+        IDsurvey50km_NP<- IDTransect50km[IDTransect50km%in%listMPA_nonprotect]
+        
+        
+        #Beta
+        for (k in 1:reps){ #Bootstrap due to different sampling effort
+          
+          if (length(IDsurvey50km_NP) == 0){
+            next
+          }
+          
+          if (dim(IDReserverestricte)[1]>length(IDsurvey50km_NP)){
+            
+            #survey NP
+            survey50km_NP<-df_bird[df_bird$NewRouteID%in%IDsurvey50km_NP,]
+            survey50km_NP <- dcast(survey50km_NP, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey50km_NP)<-survey50km_NP[,1]
+            survey50km_NP<-survey50km_NP[,-1]      
+            
+            #survey restricte
+            names_restricte_Sample<-sample(IDReserverestricte$NewRouteID,length(IDsurvey50km_NP),replace=F)
+            survey_restricte<-df_bird[df_bird$NewRouteID%in%names_restricte_Sample,]
+            survey_restricte <- dcast(survey_restricte, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey_restricte)<-survey_restricte[,1]
+            survey_restricte<-survey_restricte[,-1]
+            
+            #Merge matrix for NULL MODEL
+            Compa<-smartbind(survey_restricte, survey50km_NP)
+            rownames(Compa)<-c(rownames(survey_restricte),rownames(survey50km_NP))
+            Compa[is.na(Compa)]<-0
+            Compa<-Compa[,apply(Compa,2,sum)>0]
+            
+            #create random matrices
+            Compa_NULL<-Compa
+            null.algo<-nullmodel(Compa_NULL, "curveball")
+            random_mat <- simulate(null.algo, nsim=reps,seed=1871)
+            #create random matrices
+            random_pool<-mclapply(1:reps,function(e){ rbind(apply(random_mat[,,e][1:dim(survey_restricte)[1],],2,sum),apply(random_mat[,,e][(dim(survey50km_NP)[1]+1):dim(Compa_NULL)[1],],2,sum))
+            },mc.cores=core)
+            random_pool<- rapply(random_pool,function(x) ifelse(x>=1,1,x), how = "replace")
+            beta_null<-mclapply(1:reps,function(k) beta.pair(random_pool[[k]],index.family = "jaccard"),mc.cores=core)  
+          }
+          
+          
+          else {
+            
+            #survey NP
+            names_NP_Sample<-sample(IDsurvey50km_NP,dim(IDReserverestricte)[1],replace=F)
+            survey50km_NP<-df_bird[df_bird$NewRouteID%in%names_NP_Sample,]
+            survey50km_NP <- dcast(survey50km_NP, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey50km_NP)<-survey50km_NP[,1]
+            survey50km_NP<-survey50km_NP[,-1]      
+            
+            #survey restricte
+            survey_restricte<-df_bird[df_bird$NewRouteID%in%IDReserverestricte$NewRouteID,]
+            survey_restricte <- dcast(survey_restricte, IDcomplete ~ AOU,value.var="Abun",  fun.aggregate=sum)
+            rownames(survey_restricte)<-survey_restricte[,1]
+            survey_restricte<-survey_restricte[,-1]
+            
+            #Merge matrix for NULL MODEL
+            Compa<-smartbind(survey_restricte, survey50km_NP)
+            rownames(Compa)<-c(rownames(survey_restricte),rownames(survey50km_NP))
+            Compa[is.na(Compa)]<-0
+            Compa<-Compa[,apply(Compa,2,sum)>0]
+            
+            #create random matrices
+            Compa_NULL<-Compa
+            null.algo<-nullmodel(Compa_NULL, "curveball")
+            random_mat <- simulate(null.algo, nsim=reps,seed=1871)
+            #create random matrices
+            random_pool<-mclapply(1:reps,function(e){ rbind(apply(random_mat[,,e][1:dim(survey_restricte)[1],],2,sum),apply(random_mat[,,e][(dim(survey50km_NP)[1]+1):dim(Compa_NULL)[1],],2,sum))
+            },mc.cores=core)
+            random_pool<- rapply(random_pool,function(x) ifelse(x>=1,1,x), how = "replace")
+            beta_null<-mclapply(1:reps,function(k) beta.pair(random_pool[[k]],index.family = "jaccard"),mc.cores=core)  
+          }
+          
+          Compa<-rbind(apply(Compa[1:dim(survey_restricte)[1],],2,sum),apply(Compa[(dim(survey50km_NP)[1]+1):dim(Compa)[1],],2,sum))
+          Compa[Compa>0]<-1
+          BETAX<-beta.pair(Compa, index.family="jaccard")
+          
+          Bird_Betarestricte_NonP_TOT_50km[i,k]<-BETAX$beta.jac
+          Bird_Betarestricte_NonP_TUR_50km[i,k]<-BETAX$beta.jtu
+          Bird_Betarestricte_NonP_NES_50km[i,k]<-BETAX$beta.jne
+          
+          if(length(dim(Compa[,Compa[1,]==1 & Compa[2,]==0])[2])==0){Bird_S_50km_Unique_restricte.Rest_NP[i,k]<-0
+          }else{Bird_S_50km_Unique_restricte.Rest_NP[i,k]<-dim(Compa[,Compa[1,]==1 & Compa[2,]==0])[2]} 
+          
+          if(length(dim(Compa[,Compa[2,]==1 & Compa[1,]==0])[2])==0){Bird_S_50km_Unique_NP.Rest_NP[i,k]<-0
+          }else{ Bird_S_50km_Unique_NP.Rest_NP[i,k]<-dim(Compa[,Compa[2,]==1 & Compa[1,]==0])[2]} 
+          
+          Bird_S_50km_Shared_restricte_NonP.Rest_NP[i,k]<-dim(Compa[,apply(Compa,2,sum)==2])[2]
+          
+          nullbeta <- t( do.call(rbind.data.frame, beta_null))
+          # SES=(obs-mean(rand))/sd(rand)
+          ses.tot_50km_Bird_restricte_NonP[i,k] = (BETAX$beta.jac - mean(nullbeta[3,]))/sd(nullbeta[3,])
+          ses.tur_50km_Bird_restricte_NonP[i,k] = (BETAX$beta.jtu - mean(nullbeta[1,]))/sd(nullbeta[1,])
+          ses.nes_50km_Bird_restricte_NonP[i,k] = (BETAX$beta.jne - mean(nullbeta[2,]))/sd(nullbeta[2,])
+         
+          
+          save(Bird_Betarestricte_NonP_TOT_50km,file="Bird_Betarestricte_NonP_TOT_50km.RData")
+          save(Bird_Betarestricte_NonP_TUR_50km,file="Bird_Betarestricte_NonP_TUR_50km.RData")
+          save(Bird_Betarestricte_NonP_NES_50km,file="Bird_Betarestricte_NonP_NES_50km.RData")
+          
+          save(Bird_S_50km_Unique_restricte.Rest_NP,file="Bird_S_50km_Unique_restricte.Rest_NP.RData")
+          save(Bird_S_50km_Unique_NP.Rest_NP,file="Bird_S_50km_Unique_NP.Rest_NP.RData")
+          save(Bird_S_50km_Shared_restricte_NonP.Rest_NP,file="Bird_S_50km_Shared_restricte_NonP.Rest_NP.RData")
+          
+          save(ses.tot_50km_Bird_restricte_NonP,file="ses.tot_50km_Bird_restricte_NonP.RData")
+          save(ses.tur_50km_Bird_restricte_NonP,file="ses.tur_50km_Bird_restricte_NonP.RData")
+          save(ses.nes_50km_Bird_restricte_NonP,file="ses.nes_50km_Bird_restricte_NonP.RData")
+      
+          
+          print(paste0("k",k))
+        }
+        
+        print(paste0("i",i))
+      }
+      
+      
