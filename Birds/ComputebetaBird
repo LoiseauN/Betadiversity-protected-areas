@@ -2,7 +2,7 @@
 # Computing Beta diversity BIRD
 #
 # Author : Nicolas Loiseau, 
-# Date : 19-01-2018
+# 
 # 
 #R version 3.4.1 (2017-06-30) -- "Single Candle"
 #Copyright (C) 2017 The R Foundation for Statistical Computing
@@ -33,7 +33,7 @@ library(parallel)
 
 `%notin%` <- Negate(`%in%`)
 ########################################################################
-# Load data
+# Load data from BBS survey https://www.pwrc.usgs.gov/bbs/.
 ########################################################################
       # All Bird recorded: Occurence
       fifty1<-read.table("fifty1.csv",sep=",",header=T)
@@ -100,7 +100,7 @@ library(parallel)
 
 
 ########################################################################
-# PROTECTION EXTRACTION
+# PROTECTION EXTRACTION DATA FROM https://gapanalysis.usgs.gov/padus/
 ########################################################################
       ########################################################################
       # UCGS EXTRACTION
