@@ -1,7 +1,12 @@
 load("InfoTOTAL.RData")
 load("occSERF.RData")
 load("surveySERF.RData")
-load("geodist.Transect.RData")
+load("geodist.Transect1.RData")
+load("geodist.Transect2.RData")
+load("geodist.Transect3.RData")
+load("geodist.Transect4.RData")
+
+geodist.Transect <-rbind(geodist.Transect1,geodist.Transect2,geodist.Transect3,geodist.Transect4)
 
 listMPA_SPA<-rbind(subset(InfoTOTAL,InfoTOTAL$Infotrans.protec=="Unfished"))
 listMPA_SPA<-na.omit(unique(listMPA_SPA$namesMPA))
