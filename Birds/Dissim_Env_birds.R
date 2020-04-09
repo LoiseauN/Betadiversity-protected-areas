@@ -1,34 +1,24 @@
-load("~/Documents/Postdoc MARBEC/BETA PROTECTED AREA_CLEAN/Birds/Data/Environmental_data/Map habitat/nlcd_2011_landcover_2011_edition_2014_10_10/Habitatdiversity_Birds2.RData")
-load("~/Documents/Postdoc MARBEC/BETA PROTECTED AREA GITHUB/data/Birds/Temp_prec/Birds_temp_prec.RData")
+load("Hab_all.RData")
+reps=1000
+core=30
+scale=50 #10 or 50 or 100km
 
-Hab_all <- merge(Habitatdiversity_Birds2,Birds_temp_prec,by.x="row.names",by.y="name" )
-rownames(Hab_all) <- Hab_all[,1]
-Hab_all <- Hab_all[,-c(1,17,18)]
-Hab_all$Precipitation<-log(Hab_all$Precipitation)
-setwd("~/Documents/Postdoc MARBEC/BETA PROTECTED AREA_CLEAN/Birds/Data/Results")
+Dissim_habSPA_NPA_TOT_50km_Bird<-matrix(NA,length(listMPA_SPA),reps)
 
-reps=200
-core=3
-scale=50 #50 or 50 or 500km
-
-Dissim_habSPA_NPA_TOT_50km_Bird<-matrix(NA,length(listMPA_close),reps)
-
-for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
+for (i in 1: length(listMPA_SPA)) {# For each PA
   
-  # Prendre les surveys de cette r??serve
-  IDReserveClose<-subset(routes3,routes3$namesMPA==listMPA_close[i])
-  
-  #survey un protected
-  #survey un protected
+  #survey protected
+  IDReserveSPA<-subset(info_survey,info_survey$namesMPA==listMPA_SPA[i])
+
   IDsurvey50km<-NULL 
-  for (j in 1: dim(IDReserveClose)[1]){
+  for (j in 1: dim(IDReserveSPA)[1]){
     
-    if(dim(IDReserveClose)[1]==1){#strucure of the dataframe is different if dim(survey_Closed)[1]==1.
-      distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,])
+    if(dim(IDReserveSPA)[1]==1){#strucure of the dataframe is different if dim(survey_SPAd)[1]==1.
+      distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveSPA$NewRouteID,])
       rownames(distGeo)<-colnames(geodist.Bird)}
     
     else{
-      distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,]))
+      distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveSPA$NewRouteID,]))
       rownames(distGeo)<-colnames(geodist.Bird)
     }
     distGeo2<-subset(distGeo,distGeo[,j]<50) 
@@ -39,54 +29,54 @@ for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
   IDsurvey50km<-unique(IDsurvey50km)
   
   #survey non protected
-  IDsurvey50km_NP<- IDsurvey50km[IDsurvey50km%in%listMPA_nonprotect]
+  IDsurvey50km_NPA<- IDsurvey50km[IDsurvey50km%in%listMPA_NPA]
   
   #Calcul de la beta, du nombre d'esp partag?? et unique 
   for (k in 1:reps){ #Bootstrap due to different sampling effort
     
-    if (length(IDsurvey50km_NP) == 0){
+    if (length(IDsurvey50km_NPA) == 0){
       next
     }
     
-    if (dim(IDReserveClose)[1]>length(IDsurvey50km_NP)){
+    if (dim(IDReserveSPA)[1]>length(IDsurvey50km_NPA)){
       
-      #survey NP
+      #survey NPA
       
-      survey50km_NP <-   Hab_all[rownames(Hab_all)%in%IDsurvey50km_NP,]
-     
-      #survey Closed
-      names_Closed_Sample<-sample(IDReserveClose$NewRouteID,length(IDsurvey50km_NP),replace=F)
-      survey_Closed <-   Hab_all[rownames(Hab_all) %in% names_Closed_Sample,]
-
+      survey50km_NPA <-   Hab_all[rownames(Hab_all)%in%IDsurvey50km_NPA,]
+      
+      #survey SPAd
+      names_SPAd_Sample<-sample(IDReserveSPA$NewRouteID,length(IDsurvey50km_NPA),replace=F)
+      survey_SPAd <-   Hab_all[rownames(Hab_all) %in% names_SPAd_Sample,]
+      
       
       #Merge matrix for NULL MODEL
-      Compa<-smartbind(survey_Closed, survey50km_NP)
-      rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_NP))
-
-
+      Compa<-smartbind(survey_SPAd, survey50km_NPA)
+      rownames(Compa)<-c(rownames(survey_SPAd),rownames(survey50km_NPA))
+      
+      
     }
     
-  else {
+    else {
       
-      #survey NP
-      names_NP_Sample<-sample(IDsurvey50km_NP,dim(IDReserveClose)[1],replace=F)
-      survey50km_NP <-   Hab_all[rownames(Hab_all)%in%names_NP_Sample,]
-
+      #survey NPA
+      names_NPA_Sample<-sample(IDsurvey50km_NPA,dim(IDReserveSPA)[1],replace=F)
+      survey50km_NPA <-   Hab_all[rownames(Hab_all)%in%names_NPA_Sample,]
       
-      #survey Closed
-      survey_Closed<-Hab_all[rownames(Hab_all)  %in%IDReserveClose$NewRouteID,]
-   
+      
+      #survey SPAd
+      survey_SPAd<-Hab_all[rownames(Hab_all)  %in%IDReserveSPA$NewRouteID,]
+      
       #Merge matrix for NULL MODEL
-      Compa<-smartbind(survey_Closed, survey50km_NP)
-      rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_NP))
- 
+      Compa<-smartbind(survey_SPAd, survey50km_NPA)
+      rownames(Compa)<-c(rownames(survey_SPAd),rownames(survey50km_NPA))
+      
     }
     
-    Compa<-rbind(apply(Compa[1:dim(survey_Closed)[1],],2,mean,na.rm=T),apply(Compa[(dim(survey50km_NP)[1]+1):dim(Compa)[1],],2,mean,na.rm=T))
-
-     Dissim_hab <- daisy(Compa, metric = "euclidean")
+    Compa<-rbind(apply(Compa[1:dim(survey_SPAd)[1],],2,mean,na.rm=T),apply(Compa[(dim(survey50km_NPA)[1]+1):dim(Compa)[1],],2,mean,na.rm=T))
     
-     Dissim_habSPA_NPA_TOT_50km_Bird[i,k] <- Dissim_hab[1]
+    Dissim_hab <- daisy(Compa, metric = "euclidean")
+    
+    Dissim_habSPA_NPA_TOT_50km_Bird[i,k] <- Dissim_hab[1]
     
     save(Dissim_habSPA_NPA_TOT_50km_Bird,file="Dissim_habSPA_NPA_TOT_50km_Bird.RData")
     
@@ -100,25 +90,23 @@ for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
 
 ####################################################################################################################################################################################
 
-Dissim_habSPA_RA_TOT_50km_Bird<-matrix(NA,length(listMPA_close),reps)
+Dissim_habSPA_RA_TOT_50km_Bird<-matrix(NA,length(listMPA_SPA),reps)
 
 
-for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
+for (i in 1: length(listMPA_SPA)) {# Pour chaque r??serve
   
-  # Prendre les surveys de cette r??serve
-  IDReserveClose<-subset(routes3,routes3$namesMPA==listMPA_close[i])
+  #survey protected
+  IDReserveSPA<-subset(info_survey,info_survey$namesMPA==listMPA_SPA[i])
   
-  #survey un protected
-  #survey un protected
   IDsurvey50km<-NULL 
-  for (j in 1: dim(IDReserveClose)[1]){
+  for (j in 1: dim(IDReserveSPA)[1]){
     
-    if(dim(IDReserveClose)[1]==1){#strucure of the dataframe is different if dim(survey_Closed)[1]==1.
-      distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,])
+    if(dim(IDReserveSPA)[1]==1){#strucure of the dataframe is different if dim(survey_SPAd)[1]==1.
+      distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveSPA$NewRouteID,])
       rownames(distGeo)<-colnames(geodist.Bird)}
     
     else{
-      distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveClose$NewRouteID,]))
+      distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%IDReserveSPA$NewRouteID,]))
       rownames(distGeo)<-colnames(geodist.Bird)
     }
     distGeo2<-subset(distGeo,distGeo[,j]<50) 
@@ -129,7 +117,7 @@ for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
   IDsurvey50km<-unique(IDsurvey50km)
   
   #survey non protected
-  IDsurvey50km_RESTRICT<- IDsurvey50km[IDsurvey50km%in%listMPA_restricted2]
+  IDsurvey50km_RESTRICT<- IDsurvey50km[IDsurvey50km%in%listMPA_RA2]
   
   #Calcul de la beta, du nombre d'esp partag?? et unique 
   for (k in 1:reps){ #Bootstrap due to different sampling effort
@@ -138,39 +126,39 @@ for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
       next
     }
     
-    if (dim(IDReserveClose)[1]>length(IDsurvey50km_RESTRICT)){
+    if (dim(IDReserveSPA)[1]>length(IDsurvey50km_RESTRICT)){
       
       #survey RESTRICT
       survey50km_RESTRICT<-Hab_all[rownames(Hab_all) %in%IDsurvey50km_RESTRICT,]
       
-      #survey Closed
-      names_Closed_Sample<-sample(IDReserveClose$NewRouteID,length(IDsurvey50km_RESTRICT),replace=F)
-      survey_Closed<-Hab_all[rownames(Hab_all) %in%names_Closed_Sample,]
+      #survey SPAd
+      names_SPAd_Sample<-sample(IDReserveSPA$NewRouteID,length(IDsurvey50km_RESTRICT),replace=F)
+      survey_SPAd<-Hab_all[rownames(Hab_all) %in%names_SPAd_Sample,]
       
       
       #Merge matrix for NULL MODEL
-      Compa<-smartbind(survey_Closed, survey50km_RESTRICT)
-      rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_RESTRICT))
-     
+      Compa<-smartbind(survey_SPAd, survey50km_RESTRICT)
+      rownames(Compa)<-c(rownames(survey_SPAd),rownames(survey50km_RESTRICT))
+      
     }
     
     
     else {
       
       #survey RESTRICT
-      names_RESTRICT_Sample<-sample(IDsurvey50km_RESTRICT,dim(IDReserveClose)[1],replace=F)
+      names_RESTRICT_Sample<-sample(IDsurvey50km_RESTRICT,dim(IDReserveSPA)[1],replace=F)
       survey50km_RESTRICT<-Hab_all[rownames(Hab_all) %in%names_RESTRICT_Sample,]
-
-      #survey Closed
-      survey_Closed<-Hab_all[rownames(Hab_all) %in%IDReserveClose$NewRouteID,]
- 
+      
+      #survey SPAd
+      survey_SPAd<-Hab_all[rownames(Hab_all) %in%IDReserveSPA$NewRouteID,]
+      
       #Merge matrix for NULL MODEL
-      Compa<-smartbind(survey_Closed, survey50km_RESTRICT)
-      rownames(Compa)<-c(rownames(survey_Closed),rownames(survey50km_RESTRICT))
-
+      Compa<-smartbind(survey_SPAd, survey50km_RESTRICT)
+      rownames(Compa)<-c(rownames(survey_SPAd),rownames(survey50km_RESTRICT))
+      
     }
     
-    Compa<-rbind(apply(Compa[1:dim(survey_Closed)[1],],2,mean,na.rm=T),apply(Compa[(dim(survey50km_RESTRICT)[1]+1):dim(Compa)[1],],2,mean,na.rm=T))
+    Compa<-rbind(apply(Compa[1:dim(survey_SPAd)[1],],2,mean,na.rm=T),apply(Compa[(dim(survey50km_RESTRICT)[1]+1):dim(Compa)[1],],2,mean,na.rm=T))
     
     Dissim_hab <- daisy(Compa, metric = "euclidean")
     
@@ -192,27 +180,22 @@ for (i in 1: length(listMPA_close)) {# Pour chaque r??serve
 
 ####################################################################################################################################################################################
 
-Dissim_habRA_NPA_TOT_50km_Bird<-matrix(NA,length(listMPA_restricted),reps)
+Dissim_habRA_NPA_TOT_50km_Bird<-matrix(NA,length(listMPA_RA),reps)
 
-
-
-for (i in 1: length(listMPA_restricted)) {# Pour chaque r??serve
+for (i in 1: length(listMPA_RA)) {# Pour chaque r??serve
   
+  #survey protected
+  IDReserveRA<-subset(info_survey,info_survey$namesMPA==listMPA_RA[i])
   
-  # Prendre les surveys de cette r??serve
-  IDReserverestricte<-subset(routes3,routes3$namesMPA==listMPA_restricted[i])
-  
-  
-  #Transect un protected
   IDTransect50km<-NULL 
-  for (j in 1:dim(IDReserverestricte)[1]){
+  for (j in 1:dim(IDReserveRA)[1]){
     
-    if(dim(IDReserverestricte)[1]==1){
-      distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(IDReserverestricte),])
+    if(dim(IDReserveRA)[1]==1){
+      distGeo<-data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(IDReserveRA),])
       rownames(distGeo)<-colnames(geodist.Bird)}
     
     else{
-      distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(IDReserverestricte),]))
+      distGeo<-t(data.frame(geodist.Bird[rownames(geodist.Bird)%in%rownames(IDReserveRA),]))
       rownames(distGeo)<-colnames(geodist.Bird)
     }
     
@@ -225,53 +208,51 @@ for (i in 1: length(listMPA_restricted)) {# Pour chaque r??serve
   IDTransect50km<-unique(IDTransect50km)
   
   #Transect non protected
-  IDsurvey50km_NP<- IDTransect50km[IDTransect50km%in%listMPA_nonprotect]
+  IDsurvey50km_NPA<- IDTransect50km[IDTransect50km%in%listMPA_NPA]
   
   
   #Calcul de la beta, du nombre d'esp partag?? et unique 
   for (k in 1:reps){ #Bootstrap due to different sampling effort
     
-    if (length(IDsurvey50km_NP) == 0){
+    if (length(IDsurvey50km_NPA) == 0){
       next
     }
     
-    if (dim(IDReserverestricte)[1]>length(IDsurvey50km_NP)){
+    if (dim(IDReserveRA)[1]>length(IDsurvey50km_NPA)){
       
-      #survey NP
-      survey50km_NP<-Hab_all[rownames(Hab_all)%in%IDsurvey50km_NP,]
-     
+      #survey NPA
+      survey50km_NPA<-Hab_all[rownames(Hab_all)%in%IDsurvey50km_NPA,]
       
-      #survey restricte
-      names_restricte_Sample<-sample(IDReserverestricte$NewRouteID,length(IDsurvey50km_NP),replace=F)
-      survey_restricte<-Hab_all[rownames(Hab_all)%in%names_restricte_Sample,]
-
+      
+      #survey RA
+      names_RA_Sample<-sample(IDReserveRA$NewRouteID,length(IDsurvey50km_NPA),replace=F)
+      survey_RA<-Hab_all[rownames(Hab_all)%in%names_RA_Sample,]
+      
       
       #Merge matrix for NULL MODEL
-      Compa<-smartbind(survey_restricte, survey50km_NP)
-      rownames(Compa)<-c(rownames(survey_restricte),rownames(survey50km_NP))
-   
-  
+      Compa<-smartbind(survey_RA, survey50km_NPA)
+      rownames(Compa)<-c(rownames(survey_RA),rownames(survey50km_NPA))
+      
+      
     }
-    
     
     else {
       
-      #survey NP
-      names_NP_Sample<-sample(IDsurvey50km_NP,dim(IDReserverestricte)[1],replace=F)
-      survey50km_NP<-Hab_all[rownames(Hab_all)%in%names_NP_Sample,]
-
-      #survey restricte
-      survey_restricte<-Hab_all[rownames(Hab_all)%in%IDReserverestricte$NewRouteID,]
-  
+      #survey NPA
+      names_NPA_Sample<-sample(IDsurvey50km_NPA,dim(IDReserveRA)[1],replace=F)
+      survey50km_NPA<-Hab_all[rownames(Hab_all)%in%names_NPA_Sample,]
+      
+      #survey RA
+      survey_RA<-Hab_all[rownames(Hab_all)%in%IDReserveRA$NewRouteID,]
+      
       
       #Merge matrix for NULL MODEL
-      Compa<-smartbind(survey_restricte, survey50km_NP)
-      rownames(Compa)<-c(rownames(survey_restricte),rownames(survey50km_NP))
-   
+      Compa<-smartbind(survey_RA, survey50km_NPA)
+      rownames(Compa)<-c(rownames(survey_RA),rownames(survey50km_NPA))
       
     }
     
-    Compa<-rbind(apply(Compa[1:dim(survey_restricte)[1],],2,mean,na.rm=T),apply(Compa[(dim(survey50km_NP)[1]+1):dim(Compa)[1],],2,mean,na.rm=T))
+    Compa<-rbind(apply(Compa[1:dim(survey_RA)[1],],2,mean,na.rm=T),apply(Compa[(dim(survey50km_NPA)[1]+1):dim(Compa)[1],],2,mean,na.rm=T))
     Dissim_hab <- daisy(Compa, metric = "euclidean")
     
     Dissim_habRA_NPA_TOT_50km_Bird[i,k] <- Dissim_hab[1]
