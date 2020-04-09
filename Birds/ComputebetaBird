@@ -2,23 +2,33 @@
 # Computing Beta diversity BIRD
 #
 # Author : Nicolas Loiseau, 
-# Date : 19-01-2018
 # 
 #R version 3.4.1 (2017-06-30) -- "Single Candle"
 #Copyright (C) 2017 The R Foundation for Statistical Computing
 #Platform: x86_64-apple-darwin15.6.0 (64-bit)
 #
 ###########################################################################################################
-
-
-
-#######################################################################
-#Names of protected area
-#######################################################################
+`%notin%` <- Negate(`%in%`)
+########################################################################
+# Load data on Birds Life Surveys
+########################################################################
 
 load("geodist.Bird.RData")
 load("info_survey.RData")
-load("df_bird.RData")
+#Data are cut to reduce size of files for github
+load("df_bird1.RData")
+load("df_bird2.RData")
+load("df_bird3.RData")
+
+load("geodist.Bird1.RData")
+load("geodist.Bird2.RData")
+load("geodist.Bird3.RData")
+load("geodist.Bird4.RData")
+
+df_bird <- rbind(df_bird1,df_bird2,df_bird3)
+geodist.Bird <- rbind(geodist.Bird1,geodist.Bird2,geodist.Bird3,geodist.Bird4)
+
+
 
 listMPA_SPA<-rbind(subset(info_survey,info_survey$Access=="Closed"), subset(info_survey,info_survey$Access=="Restricted Access")
                      ,subset(info_survey,info_survey$IUCN_CAT=="Ia"),subset(info_survey,info_survey$IUCN_CAT=="Ib"))
