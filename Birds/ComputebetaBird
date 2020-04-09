@@ -36,8 +36,9 @@ listMPA_SPA<-na.omit(unique(listMPA_SPA$namesMPA))
 
 listMPA_RA<-subset(info_survey,info_survey$Access=="Open Access")
 listMPA_RA<-listMPA_restricted[listMPA_RA%notin%listMPA_SPA]
-listMPA_RA<-unique(listMPA_RA$namesMPA)
 listMPA_RA2<-unique(rownames(listMPA_RA))
+listMPA_RA<-unique(listMPA_RA$namesMPA)
+
 
 listMPA_NPA<-unique(subset(info_survey,is.na(info_survey$Access))$NewRouteID)
 
