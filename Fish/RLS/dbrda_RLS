@@ -1,0 +1,182 @@
+library(reshape2)
+
+#RLS-------------
+
+Hab_data <- read.csv2("Habdata.csv", sep=";",header =T)
+Hab_data  <- Hab_data[Hab_data$SurveyID %in% RLS_data$SurveyID,]
+
+Habtransform <- dcast(Hab_data, SurveyID ~ MajorCategory,value.var="Percent.Coverage",  fun.aggregate=sum)    # CATEGORY OR MAJOR CAT
+depth <- unique(data.frame(SurveyID=Hab_data$SurveyID, Depth=Hab_data$Depth))
+Habtransform <- merge(Habtransform,depth,by="SurveyID",all.x=T)
+rownames(Habtransform) <- Habtransform[,1]
+Habtransform<- Habtransform[,-1]
+
+Habtransform <- merge(Habtransform,RLS_chla_sst,by.x="row.names",by.y="name", all.x = T)
+rownames(Habtransform) <- Habtransform[,1]
+Habtransform<- Habtransform[,-c(1,6,7)]
+
+Habtransform <-log10(Habtransform+1)
+
+mydata <- na.omit(Habtransform)
+wss <- (nrow(mydata)-1)*sum(apply(mydata,2,var))
+for (i in 1:15) wss[i] <- sum(kmeans(mydata, centers=i)$withinss)
+plot(1:15, wss, type="b", xlab="Number of Clusters",
+     ylab="Within groups sum of squares")
+
+grouphab<-data.frame(SurveyID=rownames(Habtransform), group=kmeans(na.omit(Habtransform),6, nstart = 30)$cluster)
+
+#PC1Approach
+dist_hab <- dist(Habtransform,"euclidean")
+pcoa_hab <- ape::pcoa(dist_hab)
+PC <- pcoa_hab$vectors[,1:4]
+
+data_hab_prot <- merge(grouphab,PC,by.x= "SurveyID",by="row.names",all.x = T)
+rownames(data_hab_prot) <- data_hab_prot[,1]
+colnames(data_hab_prot)[1:6]<- c("SurveyID","grouphab","PC1","PC2","PC3","PC4")
+
+
+scale=50
+########################################################################
+dbrda_FISH_RLS_50km <- matrix(NA,length(listMPA_SPA),10)
+colnames(dbrda_FISH_RLS_50km) <- c("F_mod_all","Pr(>F)_mod_all",
+                                      "RsquareAdj_all",
+                                      "F_mod_partial_PA","Pr(>F)_mod_partial_PA",
+                                      "RsquareAdj_partial_PA",
+                                      "F_mod_partial_hab","Pr(>F)_mod_partial_hab",
+                                      "RsquareAdj_partial_hab",
+                                      "Is Info")
+
+InfoMPAcompared <-  matrix(NA,length(listMPA_SPA),3)
+colnames(InfoMPAcompared) <- c("SPA","NPA","RA")
+
+for (i in 1: length(listMPA_SPA) ) {# Pour chaque r??serve
+  print(i)
+  
+  # Prendre les surveys de cette r??serve
+  IDReserveSPA<-subset(Info_Reserve,Info_Reserve$NamesMPA==listMPA_SPA[i])
+  IDReserveSPA<-unique(subset(IDReserveSPA,IDReserveSPA$MPA_CAT=="SPA"))
+  
+  #survey unprotected
+  IDsurvey50km<-NULL 
+  for (j in 1: dim(IDReserveSPA)[1]){
+    
+    if(dim(IDReserveSPA)[1]==1){#strucure of the dataframe is different if dim(survey_SPA)[1]==1.
+      distGeo<-data.frame(df_geo_fish[rownames(df_geo_fish)%in%IDReserveSPA$SurveyID,])
+      rownames(distGeo)<-colnames(df_geo_fish)}
+    
+    else{
+      distGeo<-t(data.frame(df_geo_fish[rownames(df_geo_fish)%in%IDReserveSPA$SurveyID,]))
+      rownames(distGeo)<-colnames(df_geo_fish)
+    }
+    distGeo2<-subset(distGeo,distGeo[,j]<scale) 
+    distGeo2<-subset(distGeo2,distGeo2[,j]>0)  
+    distGeo2<-unique(rownames(distGeo2))
+    IDsurvey50km<-c(IDsurvey50km,distGeo2)
+  }
+  IDsurvey50km<-unique(IDsurvey50km)
+  
+  
+  if (length(IDsurvey50km)==0){next}       
+  
+  #survey non protected
+  IDsurvey50km_NPA<- IDsurvey50km[IDsurvey50km%in%listMPA_NPA]
+  
+  survey50km_NPA<-df_fish[df_fish$SurveyID%in%IDsurvey50km_NPA,]
+  if (dim(survey50km_NPA)[1]>0) { survey50km_NPA <-  dcast(survey50km_NPA, SurveyID ~ sp,value.var="Num",  fun.aggregate=sum)
+  rownames(survey50km_NPA)<-survey50km_NPA[,1]
+  survey50km_NPA<-survey50km_NPA[,-1] }    
+  
+  #survey restricted
+  IDsurvey50km_RA<- IDsurvey50km[IDsurvey50km%in%listMPA_RA2]
+  survey50km_RA<-df_fish[df_fish$SurveyID%in%IDsurvey50km_RA,]
+  
+  if (dim(survey50km_RA)[1]>0) { survey50km_RA <-  dcast(survey50km_RA, SurveyID ~ sp,value.var="Num",  fun.aggregate=sum)
+  rownames(survey50km_RA)<-survey50km_RA[,1]
+  survey50km_RA<-survey50km_RA[,-1] }    
+  
+  if (dim(survey50km_NPA)[1]==0  & dim(survey50km_RA)[1]==0){next}       
+  
+  IDReserveSPA<-unique(IDReserveSPA$SurveyID)
+  survey_SPA<-df_fish[df_fish$SurveyID%in%IDReserveSPA,]
+  survey_SPA <-  dcast(survey_SPA, SurveyID ~ sp,value.var="Num",  fun.aggregate=sum)
+  rownames(survey_SPA)<-survey_SPA[,1]
+  survey_SPA<-survey_SPA[,-1]
+  survey_SPA <- survey_SPA[apply(survey_SPA,1,sum)>0,]
+  
+  if (dim(survey50km_NPA)[1]>0) survey50km_NPA <- survey50km_NPA[apply(survey50km_NPA,1,sum)>0,]
+  if (dim(survey50km_RA)[1]>0)  survey50km_RA <- survey50km_RA[apply(survey50km_RA,1,sum)>0,]   
+  
+  data_pool <-  smartbind(survey_SPA,survey50km_NPA,survey50km_RA)
+  data_pool[is.na(data_pool)] <- 0
+  rownames(data_pool)<- c(rownames(survey_SPA),rownames(survey50km_NPA),rownames(survey50km_RA))
+  data_pool[data_pool>0] <- 1
+  
+ 
+  
+  Management <- data.frame(SurveyID=rownames(data_pool),
+                           Management=c(rep("Close",dim(survey_SPA)[1]),rep("Unpro",dim(survey50km_NPA)[1])
+                                        ,rep("Restricted",dim(survey50km_RA)[1])))
+  
+  Hab <- data_hab_prot[rownames(data_hab_prot) %in% rownames(data_pool),]
+  
+  if (dim(Hab)[1]==0 | dim(Hab)[1] < nrow(data_pool)*0.07) { 
+    beta_pool <- beta.pair(data_pool, index.family="jaccard")
+    
+  mod_complete <- capscale(formula= beta_pool$beta.jtu ~ Management, data = Management)
+  anov_complete <- anova(mod_complete, permutations = 9999)
+
+  dbrda_FISH_RLS_50km[i,1] <- anov_complete$'F'[1]
+  dbrda_FISH_RLS_50km[i,2] <- anov_complete$'Pr(>F)'[1]
+  dbrda_FISH_RLS_50km[i,3] <- RsquareAdj(mod_complete)$r.squared
+  
+  dbrda_FISH_RLS_50km[i,10] <- 0
+  
+  
+
+  }else {
+    
+    #Hab$dominanthab <- colnames(Hab)[apply(Hab,1,which.max)]
+    #Management <-merge(Management,Hab,by.x="rownames",by.y="row.names")
+    InfoMana_hab <-merge(Management,Hab,by="SurveyID",all.x=T)
+    rownames(InfoMana_hab) <- InfoMana_hab[,1]
+    InfoMana_hab <- InfoMana_hab[,-1]
+    #colnames(InfoMana_hab) <- c("Management","grouphab")
+    InfoMana_hab <- na.omit(InfoMana_hab)
+    data_pool<-data_pool[rownames(data_pool) %in% rownames(InfoMana_hab),]
+    InfoMana_hab <- InfoMana_hab[match(rownames(data_pool), rownames(InfoMana_hab)), ]
+
+    beta_pool <- beta.pair(data_pool, index.family="jaccard")
+    
+    
+    mod_complete <- capscale(formula= beta_pool$beta.jtu ~ Management + PC1 + PC2 , data = InfoMana_hab)
+    mod_partial_PA  <- capscale(formula= beta_pool$beta.jtu ~ Management + Condition(PC1 + PC2 ), data = InfoMana_hab)
+    mod_partial_hab  <- capscale(formula= beta_pool$beta.jtu ~ Condition(Management) + PC1 + PC2 , data = InfoMana_hab)
+    
+    anov_complete <- anova(mod_complete, permutations = 9999)
+    anov_partial_PA  <- anova(mod_partial_PA, permutations = 9999)
+    anov_partial_hab  <- anova(mod_partial_hab, permutations = 9999)
+    
+    dbrda_FISH_RLS_50km[i,1] <- anov_complete$'F'[1]
+    dbrda_FISH_RLS_50km[i,2] <- anov_complete$'Pr(>F)'[1]
+    dbrda_FISH_RLS_50km[i,3] <- RsquareAdj(mod_complete)$r.squared
+    
+    dbrda_FISH_RLS_50km[i,4] <- anov_partial_PA$'F'[1]
+    dbrda_FISH_RLS_50km[i,5] <- anov_partial_PA$'Pr(>F)'[1]
+    dbrda_FISH_RLS_50km[i,6] <- RsquareAdj(mod_partial_PA)$r.squared
+    
+    dbrda_FISH_RLS_50km[i,7] <- anov_partial_hab$'F'[1]
+    dbrda_FISH_RLS_50km[i,8] <- anov_partial_hab$'Pr(>F)'[1]
+    dbrda_FISH_RLS_50km[i,9] <- RsquareAdj(mod_partial_hab)$r.squared
+    
+    dbrda_FISH_RLS_50km[i,10] <- 1
+    
+    if(dim(survey_SPA)[1]>0) InfoMPAcompared[i,1]<- 1
+    if(dim(survey50km_NPA)[1]>0) InfoMPAcompared[i,2]<- 1
+    if(dim(survey50km_RA)[1]>0) InfoMPAcompared[i,3]<- 1
+    
+  } 
+  
+}
+
+
+save(dbrda_FISH_RLS_50km,file="dbrda_FISH_RLS_50km.RData")
