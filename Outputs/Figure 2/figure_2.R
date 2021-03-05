@@ -184,7 +184,7 @@ wilcox.test(apply(S_plant_restricted_50vsNP,1,mean),apply(S_plant_NP_50vsrestr,1
 
 
 
-grDevices::pdf(file = here::here("figures", "Figure2.pdf"), 
+grDevices::pdf(file = here::here("Figures", "Figure2.pdf"), 
                width = 11.7, height = 8.3) #SAVE A4
 print(multiplot(p1,p2,p3,cols=3))
 dev.off()
