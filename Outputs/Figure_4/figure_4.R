@@ -417,7 +417,7 @@ annotate("text", x=1, y=0.973, label= "***",size=6.5,fontface=2,color="black")+
 
 grDevices::pdf(file = here::here("Figures", "Figure4.pdf"), 
                width = 10, height = 10) 
-print(multiplot(p1,p7,p4,p2,p8,p5,p3,p9,p6,cols=3))
+print(multiplot(p1)#,p7,p4,p2,p8,p5,p3,p9,p6,cols=3))
 dev.off()
 
 
