@@ -11,10 +11,10 @@ library(png)
 source(here::here("Function", "multiplot.R"))
 ## Import Icons ----
 
-paths <- list.files(path = here::here("Outputs", "Figure 2"), pattern = "*.png$", 
+paths <- list.files(path = here::here("Outputs", "Figure_3"), pattern = "*.png$", 
                     full.names = TRUE)
 
-files <- list.files(path = here::here("Outputs", "Figure 2"), pattern = "*.png$", 
+files <- list.files(path = here::here("Outputs", "Figure_3"), pattern = "*.png$", 
                     full.names = FALSE)
 
 all_im <- lapply(paths, png::readPNG)
