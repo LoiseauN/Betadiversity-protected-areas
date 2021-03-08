@@ -11,10 +11,10 @@ library(png)
 source(here::here("Function", "multiplot.R"))
 ## Import Icons ----
 
-paths <- list.files(path = here::here("Outputs", "Figure_4"), pattern = "*.png$", 
+paths <- list.files(path = here::here("Outputs", "Figure_5"), pattern = "*.png$", 
                     full.names = TRUE)
 
-files <- list.files(path = here::here("Outputs", "Figure_4"), pattern = "*.png$", 
+files <- list.files(path = here::here("Outputs", "Figure_5"), pattern = "*.png$", 
                     full.names = FALSE)
 
 all_im <- lapply(paths, png::readPNG)
@@ -23,10 +23,10 @@ names(all_im) <- gsub(".png", "", files)
 
 ## Prepare Data ----
 
-filenames <- list.files(path = here::here("Outputs", "Figure_4"), pattern = ".RData$",
+filenames <- list.files(path = here::here("Outputs", "Figure_5"), pattern = ".RData$",
                         full.names = FALSE)
 
-files <- list.files(path = here::here("Outputs", "Figure_4"), pattern = ".RData$",
+files <- list.files(path = here::here("Outputs", "Figure_5"), pattern = ".RData$",
                     full.names = TRUE)
 
 lapply(files, load, environment())
@@ -157,7 +157,7 @@ p3<-ggplot(data, aes(Components,beta,colour=Components)) +
        x = "",
        y = "",
        colour = "Components") +
-  theme_bw() +  annotation_custom(rasterGrob(all_im$Plant),  xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Plant),  xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)+
 annotate("text", x=1, y=0.973, label= "***",size=6.5,fontface=2,color="black")+
   annotate("text", x=2, y=0.973, label= "***",size=6.5,fontface=2,color="black")+
   annotate("text", x=3, y=1, label= "ns",size=4)+theme(axis.text.x = element_text(size=12))
@@ -415,7 +415,7 @@ p9<-ggplot(data, aes(Components,beta,colour=Components)) +
   annotate("text", x=2, y=1, label= "ns",size=4)+
   annotate("text", x=3, y=0.973, label= "***",size=6.5,fontface=2,color="black")+theme(axis.text.x = element_text(size=12))
 
-grDevices::pdf(file = here::here("Figures", "Figure4.pdf"), 
+grDevices::pdf(file = here::here("Figures", "Figure5.pdf"), 
                width = 10, height = 10) 
 print(multiplot(p1)#,p7,p4,p2,p8,p5,p3,p9,p6,cols=3))
       dev.off()
