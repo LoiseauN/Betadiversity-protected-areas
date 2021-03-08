@@ -72,7 +72,7 @@ p1<-ggplot(data, aes(Components,beta,colour=Components)) +
        x = "",
        y = "SPA vs NPA",
        colour = "Components") +
-  theme_bw() +  annotation_custom(rasterGrob(img), xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Fish), xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)
 
 
 
@@ -111,7 +111,7 @@ p2<-ggplot(data, aes(Components,beta,colour=Components)) +
        x = "",
        y = "",
        colour = "Components") +
-  theme_bw() +  annotation_custom(rasterGrob(img2),  xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)#+
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Bird),  xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)#+
 
 #+
 #theme(panel.grid.major = element_blank(),
@@ -152,7 +152,7 @@ p3<-ggplot(data, aes(Components,beta,colour=Components)) +
        x = "",
        y = "",
        colour = "Components") +
-  theme_bw() +  annotation_custom(rasterGrob(img3),  xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)#+
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Plant),  xmin = 2.7, xmax = 3.7, ymin = 0.8, ymax = 0.97)#+
 
 
 ###################################################################################################################################### 
