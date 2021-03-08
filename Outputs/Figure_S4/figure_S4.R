@@ -34,12 +34,8 @@ lapply(files, load, environment())
 
 
 #--- Plot
-###################################################################################################################################### 
-###################################################################################################################################### 
-#################################PROTECTED VS UNPROTECTED#############################################################################
-###################################################################################################################################### 
-######################################################################################################################################
-#################################FISH##################################################################################################### 
+# ------- PROTECTED VS UNPROTECTED
+#  ----FISH
 Closed_NP50km_Sensibility<-as.data.frame(c(apply(Fish_BetaClose_NonP_TOT_50km_Sensibility,1,mean),apply(Fish_BetaClose_NonP_TUR_50km_Sensibility,1,mean),apply(Fish_BetaClose_NonP_NES_50km_Sensibility,1,mean)))
 Closed_NP50km_Sensibility$Components<-factor(c(rep("Total",dim(Fish_BetaClose_NonP_TOT_50km_Sensibility)[1]),rep("Turnover",dim(Fish_BetaClose_NonP_TOT_50km_Sensibility)[1]),rep("Nestedness",dim(Fish_BetaClose_NonP_TOT_50km_Sensibility)[1])))
 colnames(Closed_NP50km_Sensibility)<-c("beta","Components")
@@ -76,8 +72,7 @@ p1<-ggplot(data, aes(Components,beta,colour=Components)) +
 
 
 
-#################################BIRD##################################################################################################### 
-
+#  ----BIRD
 Closed_NP50km_Sensibility<-as.data.frame(c(apply(Bird_BetaClose_NonP_TOT_50km_Sensibility,1,mean),apply(Bird_BetaClose_NonP_TUR_50km_Sensibility,1,mean),apply(Bird_BetaClose_NonP_NES_50km_Sensibility,1,mean)))
 Closed_NP50km_Sensibility$Components<-factor(c(rep("Total",dim(Bird_BetaClose_NonP_TOT_50km_Sensibility)[1]),rep("Turnover",dim(Bird_BetaClose_NonP_TOT_50km_Sensibility)[1]),rep("Nestedness",dim(Bird_BetaClose_NonP_TOT_50km_Sensibility)[1])))
 colnames(Closed_NP50km_Sensibility)<-c("beta","Components")
