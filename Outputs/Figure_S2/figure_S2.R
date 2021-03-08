@@ -244,8 +244,8 @@ p5<-ggplot(data, aes(Components,beta,colour=Components)) +
 
 #################################PLANT##################################################################################################### 
 
-Closed_NP50km<-as.data.frame(c(apply(ses.tot_Restricted_NonP_50km,1,mean),apply(ses.tur_Restricted_NonP_50km,1,mean),apply(ses.nes_Restricted_NonP_50km,1,mean)))
-Closed_NP50km$Components<-factor(c(rep("Total",dim(ses.tot_Restricted_NonP_50km)[1]),rep("Turnover",dim(ses.tot_Restricted_NonP_50km)[1]),rep("Nestedness",dim(ses.tot_Restricted_NonP_50km)[1])))
+Closed_NP50km<-as.data.frame(c(apply(SES_Plant_Restricted_NonP_TOT_50km,1,mean),apply(SES_Plant_Restricted_NonP_TUR_50km,1,mean),apply(SES_Plant_Restricted_NonP_NES_50km,1,mean)))
+Closed_NP50km$Components<-factor(c(rep("Total",dim(SES_Plant_Restricted_NonP_TOT_50km)[1]),rep("Turnover",dim(SES_Plant_Restricted_NonP_TOT_50km)[1]),rep("Nestedness",dim(SES_Plant_Restricted_NonP_TOT_50km)[1])))
 colnames(Closed_NP50km)<-c("beta","Components")
 
 data<-Closed_NP50km
@@ -370,8 +370,8 @@ p8<-ggplot(data, aes(Components,beta,colour=Components)) +
 
 #################################PLANT##################################################################################################### 
 
-Closed_NP50km<-as.data.frame(c(apply(ses.tot_Close_Restrict_50km,1,mean),apply(ses.tur_Close_Restrict_50km,1,mean),apply(ses.nes_Close_Restrict_50km,1,mean)))
-Closed_NP50km$Components<-factor(c(rep("Total",dim(ses.tot_Close_Restrict_50km)[1]),rep("Turnover",dim(ses.tot_Close_Restrict_50km)[1]),rep("Nestedness",dim(ses.tot_Close_Restrict_50km)[1])))
+Closed_NP50km<-as.data.frame(c(apply(SES_Plant_Close_Restrict_TOT_50km,1,mean),apply(SES_Plant_Close_Restrict_TUR_50km,1,mean),apply(SES_Plant_Close_Restrict_NES_50km,1,mean)))
+Closed_NP50km$Components<-factor(c(rep("Total",dim(SES_Plant_Close_Restrict_TOT_50km)[1]),rep("Turnover",dim(SES_Plant_Close_Restrict_TOT_50km)[1]),rep("Nestedness",dim(SES_Plant_Close_Restrict_TOT_50km)[1])))
 colnames(Closed_NP50km)<-c("beta","Components")
 
 data<-Closed_NP50km
@@ -408,5 +408,9 @@ p9<-ggplot(data, aes(Components,beta,colour=Components)) +
   theme_bw() 
 
 
+grDevices::pdf(file = here::here("Figures", "FigureS2.pdf"), 
+               width = 10, height = 10) 
+print(multiplot(p1,p7,p4,p2,p8,p5,p3,p9,p6,cols=3))
+dev.off()
 
-multiplot(p1,p7,p4,p2,p8,p5,p3,p9,p6,cols=3)
+
