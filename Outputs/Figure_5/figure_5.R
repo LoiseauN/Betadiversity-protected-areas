@@ -205,7 +205,7 @@ p4<-ggplot(data, aes(Components,beta,colour=Components)) +
        colour = "Components") +
   theme_bw() +  
   annotate("text", x=1, y=0.973, label= "***",size=6.5,fontface=2,color="black")+
-  annotate("text", x=2, y=0.973, label= "ns",size=4,color="black")+
+  annotate("text", x=2, y=1, label= "ns",size=4,color="black")+
   annotate("text", x=3, y=1, label= "ns",size=4)+theme(axis.text.x = element_text(size=12))
 
 
