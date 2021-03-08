@@ -118,8 +118,8 @@ p2<-ggplot(data, aes(Components,beta,colour=Components)) +
 
 #################################PLANT##################################################################################################### 
 
-Closed_NP50km<-as.data.frame(c(apply(ses.tot_Close_NonP_50km,1,mean),apply(ses.tur_Close_NonP_50km,1,mean),apply(ses.nes_Close_NonP_50km,1,mean)))
-Closed_NP50km$Components<-factor(c(rep("Total",dim(ses.tot_Close_NonP_50km)[1]),rep("Turnover",dim(ses.tot_Close_NonP_50km)[1]),rep("Nestedness",dim(ses.tot_Close_NonP_50km)[1])))
+Closed_NP50km<-as.data.frame(c(apply(SES_Plant_Close_NonP_TOT_50km,1,mean),apply(SES_Plant_Close_NonP_TUR_50km,1,mean),apply(SES_Plant_Close_NonP_NES_50km,1,mean)))
+Closed_NP50km$Components<-factor(c(rep("Total",dim(SES_Plant_Close_NonP_TOT_50km)[1]),rep("Turnover",dim(SES_Plant_Close_NonP_TOT_50km)[1]),rep("Nestedness",dim(SES_Plant_Close_NonP_TOT_50km)[1])))
 colnames(Closed_NP50km)<-c("beta","Components")
 
 data<-Closed_NP50km
