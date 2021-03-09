@@ -102,7 +102,7 @@ i <- ggplot(Env_turnover_plant_RA_NPA, aes(x = Envi, y = Turnover))+ ylim(0,1) +
   theme_bw() 
 
 
-grDevices::pdf(file = here::here("Figures", "Figure5.pdf"), 
+grDevices::pdf(file = here::here("Figures", "Figure6.pdf"), 
                width = 10, height = 10) 
 print(multiplot(a,b,c,d,e,f,g,h,i,cols=3))
 dev.off()
