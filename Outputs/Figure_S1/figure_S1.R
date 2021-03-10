@@ -35,24 +35,24 @@ lapply(files, load, environment())
 ##FOR SUP
 
 # ---
-data_fish <- data.frame(Rsquare = c(fish$RsquareAdj_all,fish$RsquareAdj_partial_PA,fish$RsquareAdj_partial_hab),
-                        Var = c(rep("All",nrow(fish)),
-                                rep("Protection",nrow(fish)),
-                                rep("Habitat",nrow(fish))))
+fish_dbrda <- data.frame(Rsquare = c(fish_dbrda$RsquareAdj_all,fish_dbrda$RsquareAdj_partial_PA,fish_dbrda$RsquareAdj_partial_hab),
+                        Var = c(rep("All",nrow(fish_dbrda)),
+                                rep("Protection",nrow(fish_dbrda)),
+                                rep("Habitat",nrow(fish_dbrda))))
 
 #Pour conserver l'ordre des boxplot
-data_fish$Var<- factor(data_fish$Var,levels = c('All','Protection','Habitat'),ordered = TRUE)
-data_fish$dist_cat_n[data_fish$Var == "All"] <- -0.25
-data_fish$dist_cat_n[data_fish$Var == "Protection"] <- 0.25
-data_fish$dist_cat_n[data_fish$Var == "Habitat"] <-  0 
+fish_dbrda$Var<- factor(fish_dbrda$Var,levels = c('All','Protection','Habitat'),ordered = TRUE)
+fish_dbrda$dist_cat_n[fish_dbrda$Var == "All"] <- -0.25
+fish_dbrda$dist_cat_n[fish_dbrda$Var == "Protection"] <- 0.25
+fish_dbrda$dist_cat_n[fish_dbrda$Var == "Habitat"] <-  0 
 
-data_fish$scat_adj[data_fish$Var == "All"] <- 1.25
-data_fish$scat_adj[data_fish$Var == "Protection"] <- 1.75
-data_fish$scat_adj[data_fish$Var == "Habitat"] <- 3
+fish_dbrda$scat_adj[fish_dbrda$Var == "All"] <- 1.25
+fish_dbrda$scat_adj[fish_dbrda$Var == "Protection"] <- 1.75
+fish_dbrda$scat_adj[fish_dbrda$Var == "Habitat"] <- 3
 
-###Fish
+###fish_dbrda
 
-p4<- ggplot(data_fish, aes(Var,Rsquare,colour=Var)) +
+p4<- ggplot(fish_dbrda, aes(Var,Rsquare,colour=Var)) +
   geom_boxplot(alpha=0,show.legend=FALSE)+  #mettre T pour afficher la legend
   geom_jitter(aes(dist_cat_n + scat_adj ,Rsquare),
               position=position_jitter(width=0.05,height=0),
@@ -63,29 +63,29 @@ p4<- ggplot(data_fish, aes(Var,Rsquare,colour=Var)) +
        x = "",
        y = "Rsquare",
        colour = "",size=15) + ylim(0,0.4)+
-  theme_bw() +  annotation_custom(rasterGrob(img),  xmin = 2.8, xmax = 3.5, ymin = 0.35, ymax = 0.45) +
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Fish),  xmin = 2.8, xmax = 3.5, ymin = 0.35, ymax = 0.45) +
   theme(axis.title.y = element_text(size=16),axis.text.x = element_text(size=14)) 
 
 
 # ---
-data_bird <- data.frame(Rsquare = c(bird$RsquareAdj_all,bird$RsquareAdj_partial_PA,bird$RsquareAdj_partial_hab),
-                        Var = c(rep("All",nrow(bird)),
-                                rep("Protection",nrow(bird)),
-                                rep("Habitat",nrow(bird))))
+bird_dbrda <- data.frame(Rsquare = c(bird_dbrda$RsquareAdj_all,bird_dbrda$RsquareAdj_partial_PA,bird_dbrda$RsquareAdj_partial_hab),
+                        Var = c(rep("All",nrow(bird_dbrda)),
+                                rep("Protection",nrow(bird_dbrda)),
+                                rep("Habitat",nrow(bird_dbrda))))
 
 #Pour conserver l'ordre des boxplot
-data_bird$Var<- factor(data_bird$Var,levels = c('All','Protection','Habitat'),ordered = TRUE)
-data_bird$dist_cat_n[data_bird$Var == "All"] <- -0.25
-data_bird$dist_cat_n[data_bird$Var == "Protection"] <- 0.25
-data_bird$dist_cat_n[data_bird$Var == "Habitat"] <-  0 
+bird_dbrda$Var<- factor(bird_dbrda$Var,levels = c('All','Protection','Habitat'),ordered = TRUE)
+bird_dbrda$dist_cat_n[bird_dbrda$Var == "All"] <- -0.25
+bird_dbrda$dist_cat_n[bird_dbrda$Var == "Protection"] <- 0.25
+bird_dbrda$dist_cat_n[bird_dbrda$Var == "Habitat"] <-  0 
 
-data_bird$scat_adj[data_bird$Var == "All"] <- 1.25
-data_bird$scat_adj[data_bird$Var == "Protection"] <- 1.75
-data_bird$scat_adj[data_bird$Var == "Habitat"] <- 3
+bird_dbrda$scat_adj[bird_dbrda$Var == "All"] <- 1.25
+bird_dbrda$scat_adj[bird_dbrda$Var == "Protection"] <- 1.75
+bird_dbrda$scat_adj[bird_dbrda$Var == "Habitat"] <- 3
 
-###bird
+###bird_dbrda
 
-p5<- ggplot(data_bird, aes(Var,Rsquare,colour=Var)) +
+p5<- ggplot(bird_dbrda, aes(Var,Rsquare,colour=Var)) +
   geom_boxplot(alpha=0,show.legend=FALSE)+  #mettre T pour afficher la legend
   geom_jitter(aes(dist_cat_n + scat_adj ,Rsquare),
               position=position_jitter(width=0.05,height=0),
@@ -96,29 +96,29 @@ p5<- ggplot(data_bird, aes(Var,Rsquare,colour=Var)) +
        x = "",
        y = " ",
        colour = "",size=15) + ylim(0,0.4)+
-  theme_bw() +  annotation_custom(rasterGrob(img2),  xmin = 2.8, xmax = 3.5, ymin = 0.35, ymax = 0.45)  +
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Bird),  xmin = 2.8, xmax = 3.5, ymin = 0.35, ymax = 0.45)  +
   theme(axis.title.y = element_text(size=16),axis.text.x = element_text(size=14))
 
 
 # ---
-data_plant <- data.frame(Rsquare = c(plant$RsquareAdj_all,plant$RsquareAdj_partial_PA,plant$RsquareAdj_partial_hab),
-                         Var = c(rep("All",nrow(plant)),
-                                 rep("Protection",nrow(plant)),
-                                 rep("Habitat",nrow(plant))))
+plant_dbrda <- data.frame(Rsquare = c(plant_dbrda$RsquareAdj_all,plant_dbrda$RsquareAdj_partial_PA,plant_dbrda$RsquareAdj_partial_hab),
+                         Var = c(rep("All",nrow(plant_dbrda)),
+                                 rep("Protection",nrow(plant_dbrda)),
+                                 rep("Habitat",nrow(plant_dbrda))))
 
 #Pour conserver l'ordre des boxplot
-data_plant$Var<- factor(data_plant$Var,levels = c('All','Protection','Habitat'),ordered = TRUE)
-data_plant$dist_cat_n[data_plant$Var == "All"] <- -0.25
-data_plant$dist_cat_n[data_plant$Var == "Protection"] <- 0.25
-data_plant$dist_cat_n[data_plant$Var == "Habitat"] <-  0 
+plant_dbrda$Var<- factor(plant_dbrda$Var,levels = c('All','Protection','Habitat'),ordered = TRUE)
+plant_dbrda$dist_cat_n[plant_dbrda$Var == "All"] <- -0.25
+plant_dbrda$dist_cat_n[plant_dbrda$Var == "Protection"] <- 0.25
+plant_dbrda$dist_cat_n[plant_dbrda$Var == "Habitat"] <-  0 
 
-data_plant$scat_adj[data_plant$Var == "All"] <- 1.25
-data_plant$scat_adj[data_plant$Var == "Protection"] <- 1.75
-data_plant$scat_adj[data_plant$Var == "Habitat"] <- 3
+plant_dbrda$scat_adj[plant_dbrda$Var == "All"] <- 1.25
+plant_dbrda$scat_adj[plant_dbrda$Var == "Protection"] <- 1.75
+plant_dbrda$scat_adj[plant_dbrda$Var == "Habitat"] <- 3
 
-###plant
+###plant_dbrda
 
-p6<- ggplot(data_plant, aes(Var,Rsquare,colour=Var)) +
+p6<- ggplot(plant_dbrda, aes(Var,Rsquare,colour=Var)) +
   geom_boxplot(alpha=0,show.legend=FALSE)+  #mettre T pour afficher la legend
   geom_jitter(aes(dist_cat_n + scat_adj ,Rsquare),
               position=position_jitter(width=0.05,height=0),
@@ -129,8 +129,13 @@ p6<- ggplot(data_plant, aes(Var,Rsquare,colour=Var)) +
        x = "",
        y = " ",
        colour = "",size=15) + ylim(0,0.4)+
-  theme_bw() +  annotation_custom(rasterGrob(img3),  xmin = 2.8, xmax = 3.5, ymin = 0.35, ymax = 0.45)  +
+  theme_bw() +  annotation_custom(rasterGrob(all_im$Plant),  xmin = 2.8, xmax = 3.5, ymin = 0.35, ymax = 0.45)  +
   theme(axis.title.y = element_text(size=16),axis.text.x = element_text(size=14))
 
+grDevices::pdf(file = here::here("Figures", "FigureS1.pdf"), 
+               width = 10, height = 10) 
+print(multiplot(p4,p5,p6,cols=3))
+dev.off()
 
-multiplot(p4,p5,p6,cols=3)
+
+
