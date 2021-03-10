@@ -32,7 +32,7 @@ lapply(files, load, environment())
 
 
 
-#--- Plot
+#--- Plot 100km
 #################################PROTECTED VS UNPROTECTED#############################################################################
 #################################FISH##################################################################################################### 
 Closed_NP100km<-as.data.frame(c(apply(Fish_BetaClose_NonP_TOT_100km,1,mean),apply(Fish_BetaClose_NonP_TUR_100km,1,mean),apply(Fish_BetaClose_NonP_NES_100km,1,mean)))
