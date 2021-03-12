@@ -6,6 +6,7 @@ library(stringr)
 library(ggplot2)
 library(grid)
 library(png)
+library(ggpubr)
 ## Source multiplot ----
 
 source(here::here("Function", "multiplot.R"))
