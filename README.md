@@ -10,11 +10,11 @@ Code of the paper Loiseau et al. (2021) TITLE. Submitted to PlosBiology.
 
 This repository is structured as follow:
 
-- `Birds/`: Contains data and code to compute beta diversity for birds
-- `Plants/`: Contains data and code to compute beta diversity for plants
-- `Fish/`: Contains data and code to compute beta diversity for Fish
+- `Birds/`: Contains data and code to compute beta diversity and null model for birds
+- `Plants/`: Contains data and code to compute beta diversity and null model for plants
+- `Fish/`: Contains data and code to compute beta diversity and null model for Fish
 - `outputs/`: contains all data required to reproduce figures
-- `R/`: contains all code required to reproduce figures
+- `make figure`: master R script to reproduced all figures by  each R script stored in the Output
 
 
 
