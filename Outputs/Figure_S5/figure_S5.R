@@ -233,7 +233,7 @@ i <- ggplot(NE_plant, aes(x=Protection_status, y=Probability, colour=Protection_
                                                                                symbols = c("***", "**", "*", "ns"))) 
 
 grDevices::pdf(file = here::here("Figures", "FigureS5.pdf"), 
-               width = 11.7, height = 8.3) #SAVE A4
+               width =8.3 , height = 11.7) #SAVE A4
 grid.arrange(a,d,g,
              b,e,h,
              c,f,i, ncol=3)
