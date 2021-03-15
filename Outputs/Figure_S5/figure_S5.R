@@ -7,15 +7,16 @@ library(ggplot2)
 library(grid)
 library(png)
 library(ggpubr)
+library(gridExtra)
 ## Source multiplot ----
 
 source(here::here("Function", "multiplot.R"))
 ## Import Icons ----
 
-paths <- list.files(path = here::here("Outputs", "Figure_S3"), pattern = "*.png$", 
+paths <- list.files(path = here::here("Outputs", "Figure_S5"), pattern = "*.png$", 
                     full.names = TRUE)
 
-files <- list.files(path = here::here("Outputs", "Figure_S3"), pattern = "*.png$", 
+files <- list.files(path = here::here("Outputs", "Figure_S5"), pattern = "*.png$", 
                     full.names = FALSE)
 
 all_im <- lapply(paths, png::readPNG)
@@ -23,10 +24,10 @@ names(all_im) <- gsub(".png", "", files)
 
 ## Prepare Data ----
 
-filenames <- list.files(path = here::here("Outputs", "Figure_S3"), pattern = ".RData$",
+filenames <- list.files(path = here::here("Outputs", "Figure_S5"), pattern = ".RData$",
                         full.names = FALSE)
 
-files <- list.files(path = here::here("Outputs", "Figure_S3"), pattern = ".RData$",
+files <- list.files(path = here::here("Outputs", "Figure_S5"), pattern = ".RData$",
                     full.names = TRUE)
 
 lapply(files, load, environment())
@@ -52,7 +53,7 @@ a<-ggplot(THR_fish, aes(x=Protection_status, y=Probability, colour=Protection_st
                                                             label = "p.signif",method = "wilcox.test", #label.y = c(100,80,75),
                                                             symnum.args = list(cutpoints = c(0.001, 0.01, 0.05, 0.01, 1), 
                                                                                symbols = c("***", "**", "*", "ns"))) +
-  annotation_custom(rasterGrob(img),  xmin = 2.7, xmax = 3.7, ymin = 110, ymax = 120)
+  annotation_custom(rasterGrob(all_im$Fish),  xmin = 2.7, xmax = 3.7, ymin = 110, ymax = 120)
 
 
 
@@ -119,7 +120,7 @@ d <- ggplot(THR_bird, aes(x=Protection_status, y=Probability, colour=Protection_
                                                             label = "p.signif",method = "wilcox.test", #label.y = c(100,80,75),
                                                             symnum.args = list(cutpoints = c(0.001, 0.01, 0.05, 0.01, 1), 
                                                                                symbols = c("***", "**", "*", "ns"))) +
-  annotation_custom(rasterGrob(img2),  xmin = 2.7, xmax = 3.7, ymin = 110, ymax = 120)
+  annotation_custom(rasterGrob(all_im$Bird),  xmin = 2.7, xmax = 3.7, ymin = 110, ymax = 120)
 
 
 
@@ -185,7 +186,7 @@ g <- ggplot(THR_plant, aes(x=Protection_status, y=Probability, colour=Protection
                                                             label = "p.signif",method = "wilcox.test", #label.y = c(100,80,75),
                                                             symnum.args = list(cutpoints = c(0.001, 0.01, 0.05, 0.01, 1), 
                                                                                symbols = c("***", "**", "*", "ns"))) +
-  annotation_custom(rasterGrob(img3),  xmin = 2.7, xmax = 3.7, ymin = 110, ymax = 120)
+  annotation_custom(rasterGrob(all_im$Plant),  xmin = 2.7, xmax = 3.7, ymin = 110, ymax = 120)
 
 
 
@@ -231,7 +232,10 @@ i <- ggplot(NE_plant, aes(x=Protection_status, y=Probability, colour=Protection_
                                                             symnum.args = list(cutpoints = c(0.001, 0.01, 0.05, 0.01, 1), 
                                                                                symbols = c("***", "**", "*", "ns"))) 
 
-
+grDevices::pdf(file = here::here("Figures", "FigureS5.pdf"), 
+               width = 10, height = 10) 
 grid.arrange(a,d,g,
              b,e,h,
              c,f,i, ncol=3)
+dev.off()
+
