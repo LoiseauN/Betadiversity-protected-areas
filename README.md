@@ -1,6 +1,6 @@
 # Betadiversity-protected-areas
 
-Code of the paper Loiseau et al. (2021) TITLE. Submitted to PlosBiology.
+Code of the paper Loiseau et al. (2021) Maximising regional biodiversity requires a mosaic of protection levels. Submitted to PlosBiology.
 
 # Goal
 
