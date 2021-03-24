@@ -154,25 +154,4 @@ grDevices::pdf(file = here::here("Figures", "Figure2.pdf"),
 multiplot(p1,p2,p3,cols=3)
 dev.off()
 
-#PNG
-png(
-  file      = here::here("Figures", "Figure2.png"),
-  width     = 12,
-  height    = 8,
-  units     = "in",
-  res       = 600,
-  pointsize = 38
-)
-multiplot(p1,p2,p3,cols=3)
-dev.off()
-
-grDevices::postscript(file = here::here("Figures", "Figure2.eps"),
-           width     = 12,
-           height    = 8,
-           units     = "in",
-           res       = 600,
-           pointsize = 38
-)
-multiplot(p1,p2,p3,cols=3)
-dev.off()
 #save 8*12
