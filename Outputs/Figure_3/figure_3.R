@@ -154,4 +154,15 @@ grDevices::pdf(file = here::here("Figures", "Figure3.pdf"),
 print(multiplot(p1,p2,p3,cols=3))
 dev.off()
 
+#PNG
+png(
+  file      = here::here("Figures", "Figure3.png"),
+  width     = 11.7,
+  height    = 8.3,
+  units     = "in",
+  res       = 600,
+  pointsize = 38
+)
+multiplot(p1,p2,p3,cols=3)
+dev.off()
 

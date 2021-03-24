@@ -1,4 +1,4 @@
-
+rm(list = ls())
 ## Library ----
 
 library(stringr)
@@ -87,7 +87,6 @@ p1 <- ggplot(data_dbrda_fish, aes(Var,Percentage,colour=Var)) +
   theme(axis.title.y = element_text(size=16),axis.text.x = element_text(size=14))+
   annotation_custom(my_grob1)+
   annotation_custom(my_grob2)
-p1
 
 
 # ---
@@ -117,7 +116,7 @@ p2 <- ggplot(data_dbrda_bird, aes(Var,Percentage,colour=Var)) +
   theme(axis.title.y = element_text(size=16),axis.text.x = element_text(size=14))+
   annotation_custom(my_grob1)+
   annotation_custom(my_grob2)
-p2
+
 
 # ---
 data_dbrda_plant <- data.frame(Percentage = c(Pa_perc_plant*100,
@@ -146,7 +145,7 @@ p3<- ggplot(data_dbrda_plant, aes(Var,Percentage,colour=Var)) +
   theme(axis.title.y = element_text(size=16),axis.text.x = element_text(size=14))+
   annotation_custom(my_grob1)+
   annotation_custom(my_grob2)
-p3
+
 
 
 
@@ -155,4 +154,25 @@ grDevices::pdf(file = here::here("Figures", "Figure2.pdf"),
 multiplot(p1,p2,p3,cols=3)
 dev.off()
 
+#PNG
+png(
+  file      = here::here("Figures", "Figure2.png"),
+  width     = 12,
+  height    = 8,
+  units     = "in",
+  res       = 600,
+  pointsize = 38
+)
+multiplot(p1,p2,p3,cols=3)
+dev.off()
+
+grDevices::postscript(file = here::here("Figures", "Figure2.eps"),
+           width     = 12,
+           height    = 8,
+           units     = "in",
+           res       = 600,
+           pointsize = 38
+)
+multiplot(p1,p2,p3,cols=3)
+dev.off()
 #save 8*12
